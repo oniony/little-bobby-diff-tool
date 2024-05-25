@@ -1,0 +1,19 @@
+version: '2'
+
+services:
+  left:
+    image: postgres
+    container_name: postgres-left
+    environment:
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - 8901:5432
+    restart: unless-stopped
+  right:
+    image: postgres
+    container_name: postgres-right
+    environment:
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - 8902:5432
+    restart: unless-stopped
