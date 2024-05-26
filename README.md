@@ -4,6 +4,28 @@ Little Bobby Diff Tool
 
 Little Bobby Diff Tool is a CLI tool to compare database schemas.
 
+It currently compares:
+
+- [X] Catalog (database) name
+- [X] Tables
+- [X] Table columns
+- [ ] Constraints
+  - [ ] Check
+  - [ ] Foreign Key
+  - [ ] Primary Key
+  - [ ] Unique
+- [ ] Sequences
+- [ ] Routines
+- [ ] Permissions
+  - [ ] Roles
+  - [ ] Column grants
+  - [ ] Table grants
+  - [ ] Routine grants
+  - [ ] Table privileges
+- [ ] Views
+- [ ] Triggers
+- [ ] User Defined Types
+
 # Compilation
 
 * Install Rust from <https://www.rust-lang.org/>
