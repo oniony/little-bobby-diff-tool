@@ -1,20 +1,14 @@
 mod db;
 mod compare;
+mod cli;
 
 use std::process::ExitCode;
+use postgres::Error;
+use crate::cli::CLI;
 
-fn main() -> ExitCode {
-    //TODO urls from arguments
-    let left_db = db::Database::connect("postgresql://postgres:postgres@localhost:8901/postgres").unwrap();
-    let right_db = db::Database::connect("postgresql://postgres:postgres@localhost:8902/postgres").unwrap();
+fn main() -> Result<ExitCode, Error> {
+    let same = CLI::run();
     
-    let mut comparer = compare::Comparer::new(left_db, right_db);
-    
-    let same = comparer.compare();
-    
-    match same {
-        true => ExitCode::SUCCESS,
-        _ => ExitCode::FAILURE,
-    }
+    same
 }
 

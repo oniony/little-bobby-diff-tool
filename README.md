@@ -2,7 +2,7 @@ Little Bobby Diff Tool
 
 # Overview
 
-Little Bobby Diff Tool is a CLI tool to compare the schemas of two databases.
+Little Bobby Diff Tool is a CLI tool to compare database schemas.
 
 # Compilation
 
