@@ -13,7 +13,7 @@ impl CLI {
         let right_db = db::Database::connect(args.right_database_url.as_str())?;
 
         let mut comparer = compare::Comparer::new(left_db, right_db);
-        let same = comparer.compare(args.schema)?;
+        let same = comparer.compare(args.schema.as_str())?;
         
         let exit_code = match same {
             true => ExitCode::SUCCESS,
