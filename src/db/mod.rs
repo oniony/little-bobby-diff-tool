@@ -52,6 +52,49 @@ WHERE table_schema = $1;"#,
         Ok(tables)
     }
     
+    pub fn views(&mut self, schema: &str) -> Result<Vec<View>, Error> {
+        let mut views = Vec::new();
+
+        let rows = self.connection.query(r#"
+SELECT table_name,
+       view_definition,
+       check_option,
+       is_updatable,
+       is_insertable_into,
+       is_trigger_updatable,
+       is_trigger_deletable,
+       is_trigger_insertable_into
+FROM information_schema.views
+WHERE table_schema = $1;"#,
+                                         &[&schema]);
+
+        for row in rows? {
+            let view_name: String = row.get(0);
+            let view_definition: Option<String> = row.get(1);
+            let check_option: String = row.get(2);
+            let is_updatable: String = row.get(3);
+            let is_insertable_into: String = row.get(4);
+            let is_trigger_updatable: String = row.get(5);
+            let is_trigger_deletable: String = row.get(6);
+            let is_trigger_insertable_into: String = row.get(7);
+
+            let view = View {
+                view_name,
+                view_definition,
+                check_option,
+                is_updatable,
+                is_insertable_into,
+                is_trigger_updatable,
+                is_trigger_deletable,
+                is_trigger_insertable_into,
+            };
+
+            views.push(view.clone());
+        }
+
+        Ok(views)
+    }
+    
     pub fn columns(&mut self, schema: &str, table_name: &str) -> Result<Vec<Column>, Error> {
         let mut columns = Vec::new();
 
@@ -134,4 +177,16 @@ pub struct Column {
     pub is_generated: String,
     pub generation_expression: Option<String>,
     pub is_updatable: String,
+}
+
+#[derive(Clone, PartialEq)]
+pub struct View {
+    pub view_name: String,
+    pub view_definition: Option<String>,
+    pub check_option: String,
+    pub is_updatable: String,
+    pub is_insertable_into: String,
+    pub is_trigger_updatable: String,
+    pub is_trigger_deletable: String,
+    pub is_trigger_insertable_into: String,
 }
