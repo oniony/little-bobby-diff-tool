@@ -9,12 +9,12 @@ It currently compares:
 - [X] Catalog (database) name
 - [X] Tables
 - [X] Table columns
+- [ ] Sequences
 - [ ] Constraints
   - [ ] Check
   - [ ] Foreign Key
   - [ ] Primary Key
   - [ ] Unique
-- [ ] Sequences
 - [ ] Routines
 - [ ] Permissions
   - [ ] Roles

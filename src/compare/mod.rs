@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt::Display;
 use postgres::Error;
 use crate::db::{Database, Table, Column};
 
@@ -52,7 +53,7 @@ impl Comparer {
                     let table_same = self.compare_table(&left_table, rt);
                     let columns_same = self.compare_columns(schema, left_table.table_name.as_str())?;
                     
-                    same = same && table_same && columns_same;
+                    same = same & table_same && columns_same;
                     
                     right_tables_map.remove(&left_table.table_name);
                 },
@@ -105,7 +106,7 @@ impl Comparer {
                     println!("table '{}': column '{}':", table_name, left_column.column_name);
                     
                     let column_same = self.compare_column(table_name, &mut left_column, rc);
-                    same = same && column_same;
+                    same = same & column_same;
                     
                     right_columns_map.remove(&left_column.column_name);
                 },
@@ -118,64 +119,39 @@ impl Comparer {
     fn compare_column(&mut self, table_name: &str, left: &mut Column, right: &mut Column) -> bool {
         let mut same = true;
 
-        if left.column_default.clone() != right.column_default.clone() {
-            same = false;
-            println!("table '{}': column '{}': column_default changed from '{}' to '{}'", table_name, left.column_name, left.column_default.clone().unwrap_or(String::new()), right.column_default.clone().unwrap_or(String::from("")));
-        }
-        
-        if left.is_nullable != right.is_nullable {
-            same = false;
-            println!("table '{}': column '{}': is_nullable changed from '{}' to '{}'", table_name, left.column_name, left.is_nullable, right.is_nullable);
+        same = same & self.compare_column_option_property(table_name, &left.column_name, "column_default", &left.column_default, &right.column_default);
+        same = same & self.compare_column_property(table_name, &left.column_name, "is_nullable", &left.is_nullable, &right.is_nullable);
+        same = same & self.compare_column_property(table_name, &left.column_name, "data_type", &left.data_type, &right.data_type);
+        same = same & self.compare_column_option_property(table_name, &left.column_name, "character_maximum_length", &left.character_maximum_length, &right.character_maximum_length);
+        same = same & self.compare_column_option_property(table_name, &left.column_name, "numeric_precision", &left.numeric_precision, &right.numeric_precision);
+        same = same & self.compare_column_option_property(table_name, &left.column_name, "numeric_scale", &left.numeric_scale, &right.numeric_scale);
+        same = same & self.compare_column_option_property(table_name, &left.column_name, "datetime_precision", &left.datetime_precision, &right.datetime_precision);
+        same = same & self.compare_column_property(table_name, &left.column_name, "is_identity", &left.is_identity, &right.is_identity);
+        same = same & self.compare_column_option_property(table_name, &left.column_name, "identity_generation", &left.identity_generation, &right.identity_generation);
+        same = same & self.compare_column_property(table_name, &left.column_name, "is_generated", &left.is_generated, &right.is_generated);
+        same = same & self.compare_column_option_property(table_name, &left.column_name, "generation_expression", &left.generation_expression, &right.generation_expression);
+        same = same & self.compare_column_property(table_name, &left.column_name, "is_updatable", &left.is_updatable, &right.is_updatable);
+
+        same
+    }
+
+    fn compare_column_option_property<T>(&mut self, table_name: &str, column_name: &str, property_name: &str, left_value: &Option<T>, right_value: &Option<T>) -> bool where T: PartialEq, T: Display {
+        let same = left_value == right_value;
+
+        if !same {
+            let l = left_value.as_ref().map_or(String::from("none"), |v| v.to_string());
+            let r = right_value.as_ref().map_or(String::from("none"), |v| v.to_string());
+            println!("table '{}': column '{}': property '{}': changed from '{}' to '{}'", table_name, column_name, property_name, l, r);
         }
 
-        if left.data_type != right.data_type {
-            same = false;
-            println!("table '{}': column '{}': data_type changed from '{}' to '{}'", table_name, left.column_name, left.data_type, right.data_type);
-        }
-        
-        if left.character_maximum_length != right.character_maximum_length {
-            same = false;
-            println!("table '{}': column '{}': character_maximum_length changed from '{}' to '{}'", table_name, left.column_name, left.data_type, right.data_type);
-        }
+        same
+    }
 
-        if left.numeric_precision != right.numeric_precision {
-            same = false;
-            println!("table '{}': column '{}': numeric_precision changed from '{}' to '{}'", table_name, left.column_name, left.numeric_precision.clone().map_or(String::new(), |np| np.to_string()), right.numeric_precision.clone().map_or(String::new(), |np| np.to_string()));
-        }
-        
-        if left.numeric_scale != right.numeric_scale {
-            same = false;
-            println!("table '{}': column '{}': numeric_scale changed from '{}' to '{}'", table_name, left.column_name, left.numeric_scale.clone().map_or(String::new(), |np| np.to_string()), right.numeric_scale.clone().map_or(String::new(), |np| np.to_string()));
-        }
+    fn compare_column_property<T>(&mut self, table_name: &str, column_name: &str, property_name: &str, left_value: T, right_value: T) -> bool where T: PartialEq, T: Display {
+        let same = left_value == right_value;
 
-        if left.datetime_precision != right.datetime_precision {
-            same = false;
-            println!("table '{}': column '{}': datetime_precision changed from '{}' to '{}'", table_name, left.column_name, left.datetime_precision.clone().map_or(String::new(), |np| np.to_string()), right.datetime_precision.clone().map_or(String::new(), |np| np.to_string()));
-        }
-        
-        if left.is_identity != right.is_identity {
-            same = false;
-            println!("table '{}': column '{}': is_identity changed from '{}' to '{}'", table_name, left.column_name, left.is_identity, right.is_identity);
-        }
-
-        if left.identity_generation != right.identity_generation {
-            same = false;
-            println!("table '{}': column '{}': identity_generation changed from '{}' to '{}'", table_name, left.column_name, left.identity_generation.clone().map_or(String::new(), |np| np.to_string()), right.identity_generation.clone().map_or(String::new(), |np| np.to_string()));
-        }
-
-        if left.is_generated != right.is_generated {
-            same = false;
-            println!("table '{}': column '{}': is_generated changed from '{}' to '{}'", table_name, left.column_name, left.is_generated, right.is_generated);
-        }
-
-        if left.generation_expression != right.generation_expression {
-            same = false;
-            println!("table '{}': column '{}': generation_expresion changed from '{}' to '{}'", table_name, left.column_name, left.generation_expression.clone().map_or(String::new(), |np| np.to_string()), right.generation_expression.clone().map_or(String::new(), |np| np.to_string()));
-        }
-
-        if left.is_updatable != right.is_updatable {
-            same = false;
-            println!("table '{}': column '{}': is_updatable changed from '{}' to '{}'", table_name, left.column_name, left.is_updatable, right.is_updatable);
+        if !same {
+            println!("table '{}': column '{}': property '{}': changed from '{}' to '{}'", table_name, column_name, property_name, left_value, right_value);
         }
 
         same
