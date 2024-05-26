@@ -113,7 +113,7 @@ impl Comparer {
             }
         }
         
-        Ok(false)
+        Ok(same)
     }
     
     fn compare_column(&mut self, table_name: &str, left: &mut Column, right: &mut Column) -> bool {
