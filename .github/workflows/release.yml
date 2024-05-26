@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - v**
+    paths:
+      - Cargo.toml
+      - src
+      - README.md
+      - LICENSE
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Build
+      run: cargo build --release --verbose
+
+    - name: Version
+      run: echo ${{ github.sha }} > VERSION
+
+    - name: Archive
+      run: |
+        mkdir lbdt-${{ github.ref_name}}
+        mv LICENSE README.md VERSION target/release/lbdt lbdt-${{ github.ref_name }}
+        tar -czf lbdt-${{ github.ref_name }}.tgz lbdt-${{ github.ref_name }}
+
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags')
+      with: 
+        generate-release-notes: true
+        files: lbdt-${{ github.ref_name }}.tgz
