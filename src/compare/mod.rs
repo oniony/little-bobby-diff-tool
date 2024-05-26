@@ -35,16 +35,25 @@ impl Comparer {
         let left_tables = self.left_db.tables(schema.as_str())?;
         let right_tables = self.right_db.tables(schema.as_str())?;
         
-        let right_tables_map : HashMap<String, Table> = right_tables.into_iter().map(|t| (t.name.clone(), t)).collect();
-        //TODO turn right tables into map
+        let mut right_tables_map : HashMap<String, Table> = right_tables.into_iter().map(|t| (t.name.clone(), t)).collect();
         
-        //TODO for each table in left, find in right, report status
-        //TODO for each extra table in right, report as missing in left
+        let mut same = true;
         for left_table in left_tables {
             let right_table = right_tables_map.get(&left_table.name);
-            println!("left table: {}, right table: {}", left_table.name, right_table.map_or("not found", |t| &t.name))
+            
+            if right_table.is_none() {
+                same = false;
+                println!("table '{}': missing in right", left_table.name);
+            } else {
+                println!("table '{}': OK", left_table.name);
+                right_tables_map.remove(&left_table.name);
+            } 
+        }
+        
+        for right_table in right_tables_map.values() {
+            println!("table '{}': missing in left", right_table.name);
         }
 
-        Ok(false)
+        Ok(same)
     }
 }
