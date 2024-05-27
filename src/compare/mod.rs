@@ -64,8 +64,6 @@ impl Comparer {
                     same = false;
                 },
                 Some(rt) => {
-                    println!("schema: '{}': table '{}':", schema_name, left_table.table_name);
-
                     let table_same = self.compare_table(schema_name, &left_table, rt);
                     let columns_same = self.compare_columns(schema_name, left_table.table_name.as_str())?;
                     
@@ -102,8 +100,6 @@ impl Comparer {
                     continue
                 },
                 Some(rv) => {
-                    println!("schema: '{}': view '{}':", schema_name, left_view.view_name);
-                    
                     let view_same = self.compare_view(schema_name, &left_view, rv);
                     
                     same = same & view_same;
@@ -130,8 +126,6 @@ impl Comparer {
                     same = false;
                 },
                 Some(rr) => {
-                    println!("schema: '{}': routine '{}':", schema_name, left_routine.routine_name);
-                    
                     let routine_same = self.compare_routine(schema_name, &left_routine, rr);
                     
                     same = same & routine_same;
@@ -195,8 +189,6 @@ impl Comparer {
                     println!("schema: '{}': table '{}': column '{}': removed", schema_name, table_name, left_column.column_name);
                 },
                 Some(rc) => {
-                    println!("schema: '{}': table '{}': column '{}':", schema_name, table_name, left_column.column_name);
-                    
                     let column_same = self.compare_column(schema_name, table_name, &mut left_column, rc);
                     same = same & column_same;
                     
