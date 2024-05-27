@@ -218,6 +218,44 @@ WHERE table_schema = $1 AND
 
         Ok(columns)
     }
+
+    pub fn table_constraints(&mut self, schema_name: &str, table_name: &str) -> Result<Vec<TableConstraint>, Error> {
+        let mut table_constraints = Vec::new();
+
+        //NOTE CHECK constraints are currently filtered out as they have unpredictable names
+
+        let rows = self.connection.query(r#"
+SELECT constraint_name,
+       constraint_type,
+       is_deferrable,
+       initially_deferred,
+       nulls_distinct
+FROM information_schema.table_constraints
+WHERE table_schema = $1 AND
+      table_name = $2 AND
+      constraint_type != 'CHECK';"#,
+                                         &[&schema_name, &table_name])?;
+
+        for row in rows {
+            let constraint_name: String = row.get(0);
+            let constraint_type: String = row.get(1);
+            let is_deferrable: String = row.get(2);
+            let initially_deferred: String = row.get(3);
+            let nulls_distinct: Option<String> = row.get(4);
+
+            let table_constraint = TableConstraint {
+                constraint_name,
+                constraint_type,
+                is_deferrable,
+                initially_deferred,
+                nulls_distinct,
+            };
+
+            table_constraints.push(table_constraint.clone());
+        }
+
+        Ok(table_constraints)
+    }
 }
 
 #[derive(Clone, PartialEq)]
@@ -275,4 +313,13 @@ pub struct Routine {
     pub is_deterministic: String,
     pub is_null_call: Option<String>,
     pub security_type: String,
+}
+
+#[derive(Clone, PartialEq)]
+pub struct TableConstraint {
+    pub constraint_name: String,
+    pub constraint_type: String,
+    pub is_deferrable: String,
+    pub initially_deferred: String,
+    pub nulls_distinct: Option<String>,
 }

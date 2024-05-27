@@ -10,14 +10,10 @@ It currently compares the following across one or more schemas.
 
 - [X] Tables
 - [X] Table columns
+- [X] Constraints
 - [X] Views
 - [X] Routines
 - [ ] Sequences
-- [ ] Constraints
-  - [ ] Check
-  - [ ] Foreign Key
-  - [ ] Primary Key
-  - [ ] Unique
 - [ ] Permissions
   - [ ] Roles
   - [ ] Column grants
