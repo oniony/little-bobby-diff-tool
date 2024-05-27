@@ -1,5 +1,5 @@
 use std::process::ExitCode;
-use clap::Parser;
+use clap::{arg, Parser};
 use postgres::Error;
 use crate::{compare, db};
 
@@ -13,7 +13,13 @@ impl CLI {
         let right_db = db::Database::connect(args.right_database_url.as_str())?;
 
         let mut comparer = compare::Comparer::new(left_db, right_db);
-        let same = comparer.compare(args.schema.as_str())?;
+        
+        let mut same = true;
+
+        for schema in args.schema {
+            let schema_same = comparer.compare(schema.as_str())?;
+            same = same & schema_same;
+        }
         
         let exit_code = match same {
             true => ExitCode::SUCCESS,
@@ -34,5 +40,5 @@ pub struct Args {
     right_database_url: String,
     
     #[arg(short, long)]
-    schema: String,
+    schema: Vec<String>,
 }

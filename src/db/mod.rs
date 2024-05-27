@@ -13,18 +13,24 @@ impl Database {
         })
     }
     
-    pub fn catalog_name(&mut self) -> Result<String, Error> {
+    pub fn schema(&mut self, schema_name: &str) -> Result<Schema, Error> {
         let row = self.connection.query_one(r#"
-SELECT catalog_name
-FROM information_schema.information_schema_catalog_name;"#,
-                                            &[])?;
-
-        let catalog_name : String = row.get(0);
+SELECT schema_owner
+FROM information_schema.schemata
+WHERE schema_name = $1;"#,
+                                            &[&schema_name])?;
         
-        Ok(catalog_name)
+        let schema_owner = row.get(0);
+        
+        let schema = Schema {
+            schema_name: String::from(schema_name),
+            schema_owner,
+        };
+        
+        Ok(schema)
     }
-    
-    pub fn tables(&mut self, schema: &str) -> Result<Vec<Table>, Error> {
+
+    pub fn tables(&mut self, schema_name: &str) -> Result<Vec<Table>, Error> {
         let mut tables = Vec::new();
         
         let rows = self.connection.query(r#"
@@ -33,7 +39,7 @@ SELECT table_name,
        is_insertable_into
 FROM information_schema.tables
 WHERE table_schema = $1;"#,
-                                         &[&schema]);
+                                         &[&schema_name]);
 
         for row in rows? {
             let table_name : String = row.get(0);
@@ -52,7 +58,7 @@ WHERE table_schema = $1;"#,
         Ok(tables)
     }
     
-    pub fn views(&mut self, schema: &str) -> Result<Vec<View>, Error> {
+    pub fn views(&mut self, schema_name: &str) -> Result<Vec<View>, Error> {
         let mut views = Vec::new();
 
         let rows = self.connection.query(r#"
@@ -66,7 +72,7 @@ SELECT table_name,
        is_trigger_insertable_into
 FROM information_schema.views
 WHERE table_schema = $1;"#,
-                                         &[&schema]);
+                                         &[&schema_name]);
 
         for row in rows? {
             let view_name: String = row.get(0);
@@ -95,7 +101,7 @@ WHERE table_schema = $1;"#,
         Ok(views)
     }
     
-    pub fn columns(&mut self, schema: &str, table_name: &str) -> Result<Vec<Column>, Error> {
+    pub fn columns(&mut self, schema_name: &str, table_name: &str) -> Result<Vec<Column>, Error> {
         let mut columns = Vec::new();
 
         let rows = self.connection.query(r#"
@@ -115,7 +121,7 @@ SELECT column_name,
 FROM information_schema.columns
 WHERE table_schema = $1 AND
       table_name = $2;"#,
-                                         &[&schema, &table_name]);
+                                         &[&schema_name, &table_name]);
 
         for row in rows? {
             let column_name: String = row.get(0);
@@ -153,6 +159,12 @@ WHERE table_schema = $1 AND
 
         Ok(columns)
     }
+}
+
+#[derive(Clone, PartialEq)]
+pub struct Schema {
+    pub schema_name: String,
+    pub schema_owner: String,
 }
 
 #[derive(Clone, PartialEq)]
