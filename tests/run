@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+
+set -eu -o pipefail
+
+function start-db() {
+	local port=$1
+	local name=db-$port
+
+	docker run --name $name --env POSTGRES_PASSWORD=postgres --publish $port:5432 --detach --tty --rm postgres:latest >/dev/null
+}
+
+function stop-db() {
+	local port=$1
+	local name=db-$port
+
+	docker stop $name >/dev/null 2>&1 || true
+}
+
+function wait-db() {
+	local port=$1
+
+	until psql postgresql://postgres:postgres@localhost:$port/postgres -c 'SELECT 1;' >/dev/null 2>&1; do
+		sleep 1
+	done
+}
+
+function load-schema() {
+	local port=$1
+	local test=$2
+	local filename=$3
+
+	psql --file=$test/$filename postgresql://postgres:postgres@localhost:$port/postgres >/dev/null
+}
+
+export test=$1
+
+stop-db 8911 >/dev/null || true
+stop-db 8912 >/dev/null || true
+
+start-db 8911
+start-db 8912
+
+wait-db 8911
+wait-db 8912
+
+load-schema 8911 $test left.sql
+load-schema 8912 $test right.sql
+
+../target/debug/lbdt --left=postgresql://postgres:postgres@localhost:8911/postgres --right=postgresql://postgres:postgres@localhost:8912/postgres --schema=public >|$test/actual.txt || true
+
+stop-db 8911 >/dev/null || true
+stop-db 8912 >/dev/null || true
+
+diff $test/expected.txt $test/actual.txt

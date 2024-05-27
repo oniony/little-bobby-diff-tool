@@ -133,6 +133,14 @@ impl Comparer {
             }
         }
 
+        if right_routines_map.len() > 0 {
+            for right_routine in right_routines_map.values() {
+                println!("schema: '{}': routine '{}': added", schema_name, right_routine.routine_name);
+            }
+
+            same = false;
+        }
+        
         Ok(same)
     }
     
@@ -196,7 +204,15 @@ impl Comparer {
                 },
             }
         }
-        
+
+        if right_columns_map.len() > 0 {
+            for right_column in right_columns_map.values() {
+                println!("schema: '{}': table '{}': column '{}': added", schema_name, table_name, right_column.column_name);
+            }
+
+            same = false;
+        }
+
         Ok(same)
     }
     

@@ -1,0 +1,4 @@
+schema: 'public': table 'employee': column 'role_id': property 'is_nullable': changed from 'NO' to 'YES'
+schema: 'public': table 'employee': column 'role_id': property 'data_type': changed from 'integer' to 'text'
+schema: 'public': table 'employee': column 'role_id': property 'numeric_precision': changed from '32' to '<none>'
+schema: 'public': table 'employee': column 'role_id': property 'numeric_scale': changed from '0' to '<none>'
