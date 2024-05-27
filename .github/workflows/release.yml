@@ -4,11 +4,6 @@ on:
   push:
     tags:
       - v**
-    paths:
-      - Cargo.toml
-      - src
-      - README.md
-      - LICENSE
 
 env:
   CARGO_TERM_COLOR: always
