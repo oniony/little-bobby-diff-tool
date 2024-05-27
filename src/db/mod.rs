@@ -58,7 +58,7 @@ WHERE table_schema = $1;"#,
                 is_insertable_into,
             };
             
-            tables.push(table.clone());
+            tables.push(table);
         }
         
         Ok(tables)
@@ -101,12 +101,65 @@ WHERE table_schema = $1;"#,
                 is_trigger_insertable_into,
             };
 
-            views.push(view.clone());
+            views.push(view);
         }
 
         Ok(views)
     }
     
+    pub fn routines(&mut self, schema_name: &str) -> Result<Vec<Routine>, Error> {
+        let mut routines = Vec::new();
+
+        let rows = self.connection.query(r#"
+SELECT routine_name,
+       routine_type,
+       data_type,
+       type_udt_name,
+       routine_body,
+       routine_definition,
+       external_name,
+       external_language,
+       is_deterministic,
+       is_null_call,
+       security_type
+FROM information_schema.routines
+WHERE routine_schema = $1;"#,
+                                         &[&schema_name])?;
+
+        for row in rows {
+            let routine_name: String = row.get(0);
+            let routine_type: String = row.get(1);
+            let data_type: Option<String> = row.get(2);
+            let type_udt_name: Option<String> = row.get(3);
+            let routine_body: String = row.get(4);
+            let routine_definition: String = row.get(5);
+            let external_name: Option<String> = row.get(6);
+            let external_language: String = row.get(7);
+            let is_deterministic: String = row.get(8);
+            let is_null_call: Option<String> = row.get(9);
+            let security_type: String = row.get(10);
+
+            let routine = Routine {
+                routine_name,
+                routine_type,
+                data_type,
+                type_udt_name,
+                routine_body,
+                routine_definition,
+                external_name,
+                external_language,
+                is_deterministic,
+                is_null_call,
+                security_type,
+            };
+
+            routines.push(routine);
+        }
+
+        Ok(routines)
+        
+    }
+
     pub fn columns(&mut self, schema_name: &str, table_name: &str) -> Result<Vec<Column>, Error> {
         let mut columns = Vec::new();
 
@@ -207,4 +260,19 @@ pub struct View {
     pub is_trigger_updatable: String,
     pub is_trigger_deletable: String,
     pub is_trigger_insertable_into: String,
+}
+
+#[derive(Clone, PartialEq)]
+pub struct Routine {
+    pub routine_name: String,
+    pub routine_type: String,
+    pub data_type: Option<String>,
+    pub type_udt_name: Option<String>,
+    pub routine_body: String,
+    pub routine_definition: String,
+    pub external_name: Option<String>,
+    pub external_language: String,
+    pub is_deterministic: String,
+    pub is_null_call: Option<String>,
+    pub security_type: String,
 }
