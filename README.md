@@ -51,7 +51,9 @@ lbdt --left postgres://user:pass@localhost:5432/postgres \
 
 ## Options
 
-_tbd_
+* `left` -- the left, or 'before', database URL
+* `right` -- the right, or 'after', database URL
+* `schema` -- a schema to compare. May be repeated.
 
 # Versions
 
