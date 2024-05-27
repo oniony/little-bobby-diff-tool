@@ -4,7 +4,7 @@ Little Bobby Diff Tool
 
 Little Bobby Diff Tool is a CLI tool to compare database schemas.
 
-It currently compares:
+It currently compares the following across one or more schemas.
 
 - [X] Catalog (database) name
 - [X] Tables
@@ -37,7 +37,18 @@ It currently compares:
     
 # Usage
 
-    $ lbdt --left URL --right URL
+```sh
+lbdt --left URL --right URL --schema SCHEMA [--schema SCHEMA ...]
+```
+
+## Examples
+
+```sh
+lbdt --left postgres://user:pass@localhost:5432/postgres \
+     --right postgres://user:pass@localhost:85432/postgres \
+     --schema public
+     --schema other
+```
 
 ## Options
 
