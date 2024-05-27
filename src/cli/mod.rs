@@ -39,6 +39,6 @@ pub struct Args {
     #[arg(short, long)]
     right: String,
     
-    #[arg(short, long)]
+    #[arg(short, long, required = true)]
     schema: Vec<String>,
 }
