@@ -12,6 +12,8 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
     - name: Checkout
@@ -33,5 +35,5 @@ jobs:
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags')
       with: 
-        generate-release-notes: true
+        generate_release_notes: true
         files: lbdt-${{ github.ref_name }}.tgz
