@@ -1,0 +1,9 @@
+schema: 'public': routine 'create_employee': property 'routine_definition': changed from '
+INSERT INTO employee (name, role_id)
+VALUES (name, role_id);
+' to '
+INSERT INTO employee (name, role_id)
+VALUES (name, (SELECT id
+	           FROM roles r
+	           WHERE name = role_name));
+'

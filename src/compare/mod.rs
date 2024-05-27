@@ -114,7 +114,7 @@ impl Comparer {
         let left_routines = self.left_db.routines(schema_name)?;
         let right_routines = self.right_db.routines(schema_name)?;
 
-        let right_routines_map : HashMap<String, Routine> = right_routines.into_iter().map(|t| (t.routine_name.clone(), t)).collect();
+        let mut right_routines_map : HashMap<String, Routine> = right_routines.into_iter().map(|t| (t.routine_name.clone(), t)).collect();
         let mut same = true;
 
         for left_routine in left_routines {
@@ -122,13 +122,15 @@ impl Comparer {
 
             match right_routine {
                 None => {
-                    println!("schema: '{}': routine '{}': missing", schema_name, left_routine.routine_name);
+                    println!("schema: '{}': routine '{}': removed", schema_name, left_routine.routine_name);
                     same = false;
                 },
                 Some(rr) => {
                     let routine_same = self.compare_routine(schema_name, &left_routine, rr);
                     
                     same = same & routine_same;
+                    
+                    right_routines_map.remove(&left_routine.routine_name);
                 }
             }
         }
@@ -154,29 +156,29 @@ impl Comparer {
 
     fn compare_view(&mut self, schema_name: &str, left: &View, right: &View) -> bool {
         let same = 
-            self.compare_entity_option_property(schema_name, &left.view_name, "view", "table_type", &left.view_definition, &right.view_definition) &
-            self.compare_entity_property(schema_name, &left.view_name, "view", "check_option", &left.check_option, &right.check_option) &
-            self.compare_entity_property(schema_name, &left.view_name, "view", "is_updatable", &left.is_updatable, &right.is_updatable) &
-            self.compare_entity_property(schema_name, &left.view_name, "view", "is_insertable_into", &left.is_insertable_into, &right.is_insertable_into) &
-            self.compare_entity_property(schema_name, &left.view_name, "view", "is_trigger_updatable", &left.is_trigger_updatable, &right.is_trigger_updatable) &
-            self.compare_entity_property(schema_name, &left.view_name, "view", "is_trigger_deletable", &left.is_trigger_deletable, &right.is_trigger_deletable) &
-            self.compare_entity_property(schema_name, &left.view_name, "view", "is_trigger_insertable_into", &left.is_trigger_insertable_into, &right.is_trigger_insertable_into);
+            self.compare_entity_option_property(schema_name, "view", &left.view_name, "view_definition", &left.view_definition, &right.view_definition) &
+            self.compare_entity_property(schema_name, "view", &left.view_name, "check_option", &left.check_option, &right.check_option) &
+            self.compare_entity_property(schema_name, "view", &left.view_name, "is_updatable", &left.is_updatable, &right.is_updatable) &
+            self.compare_entity_property(schema_name, "view", &left.view_name, "is_insertable_into", &left.is_insertable_into, &right.is_insertable_into) &
+            self.compare_entity_property(schema_name, "view", &left.view_name, "is_trigger_updatable", &left.is_trigger_updatable, &right.is_trigger_updatable) &
+            self.compare_entity_property(schema_name, "view", &left.view_name, "is_trigger_deletable", &left.is_trigger_deletable, &right.is_trigger_deletable) &
+            self.compare_entity_property(schema_name, "view", &left.view_name, "is_trigger_insertable_into", &left.is_trigger_insertable_into, &right.is_trigger_insertable_into);
 
         same
     }
 
     fn compare_routine(&mut self, schema_name: &str, left: &Routine, right: &Routine) -> bool {
         let same =
-            self.compare_entity_property(schema_name, &left.routine_name, "routine", "routine_type", &left.routine_type, &right.routine_type) &
-            self.compare_entity_option_property(schema_name, &left.routine_name, "routine", "routine_type", &left.data_type, &right.data_type) &
-            self.compare_entity_option_property(schema_name, &left.routine_name, "routine", "type_udt_name", &left.type_udt_name, &right.type_udt_name) &
-            self.compare_entity_property(schema_name, &left.routine_name, "routine", "routine_body", &left.routine_body, &right.routine_body) &
-            self.compare_entity_property(schema_name, &left.routine_name, "routine", "routine_definition", &left.routine_definition, &right.routine_definition) &
-            self.compare_entity_option_property(schema_name, &left.routine_name, "routine", "external_name", &left.external_name, &right.external_name) &
-            self.compare_entity_property(schema_name, &left.routine_name, "routine", "external_language", &left.external_language, &right.external_language) &
-            self.compare_entity_property(schema_name, &left.routine_name, "routine", "is_deterministic", &left.is_deterministic, &right.is_deterministic) &
-            self.compare_entity_option_property(schema_name, &left.routine_name, "routine", "is_null_call", &left.is_null_call, &right.is_null_call) &
-            self.compare_entity_property(schema_name, &left.routine_name, "routine", "security_type", &left.security_type, &right.security_type);
+            self.compare_entity_property(schema_name, "routine", &left.routine_name, "routine_type", &left.routine_type, &right.routine_type) &
+            self.compare_entity_option_property(schema_name, "routine", &left.routine_name, "routine_type", &left.data_type, &right.data_type) &
+            self.compare_entity_option_property(schema_name, "routine", &left.routine_name, "type_udt_name", &left.type_udt_name, &right.type_udt_name) &
+            self.compare_entity_property(schema_name, "routine", &left.routine_name, "routine_body", &left.routine_body, &right.routine_body) &
+            self.compare_entity_property(schema_name, "routine", &left.routine_name, "routine_definition", &left.routine_definition, &right.routine_definition) &
+            self.compare_entity_option_property(schema_name, "routine", &left.routine_name, "external_name", &left.external_name, &right.external_name) &
+            self.compare_entity_property(schema_name, "routine", &left.routine_name, "external_language", &left.external_language, &right.external_language) &
+            self.compare_entity_property(schema_name, "routine", &left.routine_name, "is_deterministic", &left.is_deterministic, &right.is_deterministic) &
+            self.compare_entity_option_property(schema_name, "routine", &left.routine_name, "is_null_call", &left.is_null_call, &right.is_null_call) &
+            self.compare_entity_property(schema_name, "routine", &left.routine_name, "security_type", &left.security_type, &right.security_type);
 
         same
     }

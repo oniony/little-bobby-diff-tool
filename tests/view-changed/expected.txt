@@ -1,0 +1,13 @@
+schema: 'public': table 'manager': property 'is_insertable_into': changed from 'YES' to 'NO'
+schema: 'public': table 'manager': column 'id': property 'is_updatable': changed from 'YES' to 'NO'
+schema: 'public': table 'manager': column 'name': property 'is_updatable': changed from 'YES' to 'NO'
+schema: 'public': view 'manager': property 'table_type': changed from ' SELECT id,
+    name
+   FROM employee
+  WHERE (role_id = 6);' to ' SELECT e.id,
+    e.name
+   FROM (employee e
+     JOIN role r ON ((e.role_id = r.id)))
+  WHERE (r.name = 'manager'::text);'
+schema: 'public': view 'manager': property 'is_updatable': changed from 'YES' to 'NO'
+schema: 'public': view 'manager': property 'is_insertable_into': changed from 'YES' to 'NO'
