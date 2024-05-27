@@ -9,8 +9,8 @@ impl CLI {
     pub fn run() -> Result<ExitCode, Error> {
         let args = Args::parse();
 
-        let left_db = db::Database::connect(args.left_database_url.as_str())?;
-        let right_db = db::Database::connect(args.right_database_url.as_str())?;
+        let left_db = db::Database::connect(args.left.as_str())?;
+        let right_db = db::Database::connect(args.right.as_str())?;
 
         let mut comparer = compare::Comparer::new(left_db, right_db);
         
@@ -34,10 +34,10 @@ impl CLI {
 #[command(version, about, long_about = None)]
 pub struct Args {
     #[arg(short, long)]
-    left_database_url: String,
+    left: String,
     
     #[arg(short, long)]
-    right_database_url: String,
+    right: String,
     
     #[arg(short, long)]
     schema: Vec<String>,

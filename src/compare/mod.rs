@@ -26,13 +26,26 @@ impl Comparer {
         Ok(same)
     }
 
-    fn compare_schema(&mut self, schema: &str) -> Result<bool, Error> {
-        let left = self.left_db.schema(schema)?;
-        let right = self.right_db.schema(schema)?;
+    fn compare_schema(&mut self, schema_name: &str) -> Result<bool, Error> {
+        let left_schemas = self.left_db.schemas()?;
+        let right_schemas = self.right_db.schemas()?;
 
+        let left_schema = left_schemas.iter().find(|s| s.schema_name == schema_name);
+        let right_schema = right_schemas.iter().find(|s| s.schema_name == schema_name);
+
+        if left_schema.is_none() {
+            println!("schema '{}': missing in left", schema_name);
+            return Ok(false)
+        }
+        
+        if right_schema.is_none() {
+            println!("schema '{}': missing in right", schema_name);
+            return Ok(false)
+        }
+        
         let mut same = true;
 
-        same = same & self.compare_schema_property(&left.schema_name, "schema_owner", &left.schema_owner, &right.schema_owner);
+        same = same & self.compare_schema_property(schema_name, "schema_owner", &left_schema.unwrap().schema_owner, &right_schema.unwrap().schema_owner);
         
         Ok(same)
     }

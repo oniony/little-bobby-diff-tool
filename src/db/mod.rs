@@ -13,21 +13,27 @@ impl Database {
         })
     }
     
-    pub fn schema(&mut self, schema_name: &str) -> Result<Schema, Error> {
-        let row = self.connection.query_one(r#"
-SELECT schema_owner
-FROM information_schema.schemata
-WHERE schema_name = $1;"#,
-                                            &[&schema_name])?;
+    pub fn schemas(&mut self) -> Result<Vec<Schema>, Error> {
+        let mut schemas = Vec::new();
+
+        let rows = self.connection.query(r#"
+SELECT schema_name, schema_owner
+FROM information_schema.schemata;"#,
+                                            &[])?;
         
-        let schema_owner = row.get(0);
+        for row in rows {
+            let schema_name = row.get(0);
+            let schema_owner = row.get(1);
+
+            let schema = Schema {
+                schema_name,
+                schema_owner,
+            };
+
+            schemas.push(schema);
+        }
         
-        let schema = Schema {
-            schema_name: String::from(schema_name),
-            schema_owner,
-        };
-        
-        Ok(schema)
+        Ok(schemas)
     }
 
     pub fn tables(&mut self, schema_name: &str) -> Result<Vec<Table>, Error> {
@@ -39,9 +45,9 @@ SELECT table_name,
        is_insertable_into
 FROM information_schema.tables
 WHERE table_schema = $1;"#,
-                                         &[&schema_name]);
+                                         &[&schema_name])?;
 
-        for row in rows? {
+        for row in rows {
             let table_name : String = row.get(0);
             let table_type : String = row.get(1);
             let is_insertable_into : String = row.get(2);
@@ -72,9 +78,9 @@ SELECT table_name,
        is_trigger_insertable_into
 FROM information_schema.views
 WHERE table_schema = $1;"#,
-                                         &[&schema_name]);
+                                         &[&schema_name])?;
 
-        for row in rows? {
+        for row in rows {
             let view_name: String = row.get(0);
             let view_definition: Option<String> = row.get(1);
             let check_option: String = row.get(2);
@@ -121,9 +127,9 @@ SELECT column_name,
 FROM information_schema.columns
 WHERE table_schema = $1 AND
       table_name = $2;"#,
-                                         &[&schema_name, &table_name]);
+                                         &[&schema_name, &table_name])?;
 
-        for row in rows? {
+        for row in rows {
             let column_name: String = row.get(0);
             let column_default: Option<String> = row.get(1);
             let is_nullable: String = row.get(2);
