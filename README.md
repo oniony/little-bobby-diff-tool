@@ -1,4 +1,4 @@
-![Little Bobby Diff Tool](https://raw.githubusercontent.com/oniony/little-bobby-diff-tool/main/graphics/lbdt.png)
+![Little Bobby Diff Tool](https://github.com/oniony/little-bobby-diff-tool/blob/1c73f36d5239dd4b346c0ec2d096229e4166c705/graphics/lbdt.png)
 
 # Overview
 
