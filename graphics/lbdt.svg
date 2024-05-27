@@ -55,12 +55,12 @@
        xml:space="preserve"
        transform="matrix(0.23707009,0,0,0.23707009,20.876667,16.159587)"
        id="text13"
-       style="font-size:4px;line-height:60px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;white-space:pre;shape-inside:url(#rect13);fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
+       style="font-size:4px;line-height:60px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;white-space:pre;shape-inside:url(#rect13);display:inline;fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
     <text
        xml:space="preserve"
        transform="matrix(0.23707009,0,0,0.23707009,20.876667,16.159587)"
        id="text15"
-       style="font-size:66.6667px;line-height:1000px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;white-space:pre;shape-inside:url(#rect15);fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"><tspan
+       style="font-size:66.6667px;line-height:1000px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;white-space:pre;shape-inside:url(#rect15);display:inline;fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"><tspan
          x="249.25977"
          y="1078.5775"
          id="tspan2"><tspan
@@ -81,7 +81,10 @@
        style="font-size:15.0601px;line-height:16.3122px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;stroke:#f9f9f9;stroke-width:1.79221;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
        x="106.28413"
        y="151.37224"
-       id="text29"><tspan
+       id="text29"
+       inkscape:export-filename="../graphics/lbdt.png"
+       inkscape:export-xdpi="65.535843"
+       inkscape:export-ydpi="65.535843"><tspan
          sodipodi:role="line"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:15.0601px;line-height:16.3122px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;text-anchor:middle;fill:#00d400;stroke:#f9f9f9;stroke-width:1.79221;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
          x="106.28413"
