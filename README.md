@@ -1,5 +1,7 @@
 ![Little Bobby Diff Tool](https://github.com/oniony/little-bobby-diff-tool/blob/b2d6bf7d2e09f22a9012e3ffc8efaf4340c94d6c/graphics/lbdt.png)
 
+[![Build Status](https://github.com/oniony/little-bobby-diff-tool/actions/workflows/build.yml/badge.svg)](https://github.com/oniony/little-bobby-diff-tool/actions/workflows/build.yml)
+
 # Overview
 
 Little Bobby Diff Tool is a CLI tool to compare database schemas.
