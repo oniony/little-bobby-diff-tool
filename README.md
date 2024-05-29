@@ -59,7 +59,7 @@ _tbd_
 
 # About
 
-LBDT is written and maintained by Paul Ruane (<paul.ruane@oniony.com>) and is available at <http://github.com/oniony/lbdt/>.
+LBDT is written and maintained by Paul Ruane (<paul.ruane@oniony.com>) and is available at <http://github.com/oniony/little-bobby-diff-tool/>.
 
 LBDT is written in Rust: <http://rust-lang.org/>
 
