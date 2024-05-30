@@ -12,7 +12,7 @@ impl CLI {
         let left_db = db::Database::connect(args.left.as_str())?;
         let right_db = db::Database::connect(args.right.as_str())?;
 
-        let mut comparer = compare::Comparer::new(left_db, right_db);
+        let mut comparer = compare::Comparer::new(left_db, right_db, args.ignore_whitespace, args.ignore_column_ordinal);
         
         let mut same = true;
 
@@ -33,12 +33,18 @@ impl CLI {
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 pub struct Args {
-    #[arg(short, long)]
+    #[arg(short, long, short = 'l', help = "The left database URL")]
     left: String,
     
-    #[arg(short, long)]
+    #[arg(short, long, short = 'r', help = "The right database URL")]
     right: String,
     
-    #[arg(short, long, required = true)]
+    #[arg(short, long, required = true, short = 's', help = "Schema to compare")]
     schema: Vec<String>,
+    
+    #[arg(short, long, short = 'w', help = "Ignore routine whitespace differences")]
+    ignore_whitespace: bool,
+    
+    #[arg(short, long, short = 'o', help = "Ignore column ordering differences")]
+    ignore_column_ordinal: bool,
 }

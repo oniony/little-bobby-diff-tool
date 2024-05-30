@@ -1,7 +1,7 @@
 schema: 'public': table 'manager': property 'is_insertable_into': changed from 'YES' to 'NO'
 schema: 'public': table 'manager': column 'id': property 'is_updatable': changed from 'YES' to 'NO'
 schema: 'public': table 'manager': column 'name': property 'is_updatable': changed from 'YES' to 'NO'
-schema: 'public': view 'manager': property 'table_type': changed from ' SELECT id,
+schema: 'public': view 'manager': property 'view_definition': changed from ' SELECT id,
     name
    FROM employee
   WHERE (role_id = 6);' to ' SELECT e.id,

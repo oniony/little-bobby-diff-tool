@@ -165,6 +165,7 @@ WHERE routine_schema = $1;"#,
 
         let rows = self.connection.query(r#"
 SELECT column_name,
+       ordinal_position,
        column_default,
        is_nullable,
        data_type,
@@ -184,21 +185,23 @@ WHERE table_schema = $1 AND
 
         for row in rows {
             let column_name: String = row.get(0);
-            let column_default: Option<String> = row.get(1);
-            let is_nullable: String = row.get(2);
-            let data_type: String = row.get(3);
-            let character_maximum_length: Option<i32> = row.get(4);
-            let numeric_precision: Option<i32> = row.get(5);
-            let numeric_scale: Option<i32> = row.get(6);
-            let datetime_precision: Option<i32> = row.get(7);
-            let is_identity: String = row.get(8);
-            let identity_generation: Option<String> = row.get(9);
-            let is_generated: String = row.get(10);
-            let generation_expression: Option<String> = row.get(11);
-            let is_updatable: String = row.get(12);
+            let ordinal_position: i32 = row.get(1);
+            let column_default: Option<String> = row.get(2);
+            let is_nullable: String = row.get(3);
+            let data_type: String = row.get(4);
+            let character_maximum_length: Option<i32> = row.get(5);
+            let numeric_precision: Option<i32> = row.get(6);
+            let numeric_scale: Option<i32> = row.get(7);
+            let datetime_precision: Option<i32> = row.get(8);
+            let is_identity: String = row.get(9);
+            let identity_generation: Option<String> = row.get(10);
+            let is_generated: String = row.get(11);
+            let generation_expression: Option<String> = row.get(12);
+            let is_updatable: String = row.get(13);
 
             let column = Column {
                 column_name,
+                ordinal_position,
                 column_default,
                 is_nullable,
                 data_type,
@@ -274,6 +277,7 @@ pub struct Table {
 #[derive(Clone, PartialEq)]
 pub struct Column {
     pub column_name: String,
+    pub ordinal_position: i32,
     pub column_default: Option<String>,
     pub is_nullable: String,
     pub data_type: String,

@@ -2,20 +2,26 @@ use std::collections::HashMap;
 use std::fmt::Display;
 use postgres::Error;
 use crate::db::{Database, Table, Column, View, Routine, TableConstraint};
+use crate::string::{EqualIgnoreWhitespace};
 
 pub struct Comparer {
     left_db: Database,
     right_db: Database,
+    ignore_whitespace: bool,
+    ignore_column_ordinal: bool,
 }
 
 impl Comparer {
-    pub fn new(left_db: Database, right_db: Database) -> Comparer {
+    pub fn new(left_db: Database, right_db: Database, ignore_whitespace: bool, ignore_column_ordinal: bool) -> Comparer {
         Comparer{
             left_db,
             right_db,
+            ignore_whitespace,
+            ignore_column_ordinal,
         }
     }
 
+    //TODO return a report rather than print out directly
     pub fn compare(&mut self, schema: &str) -> Result<bool, Error> {
         let same = 
             self.compare_schema(schema)? & 
@@ -174,7 +180,12 @@ impl Comparer {
             self.compare_entity_option_property(schema_name, "routine", &left.routine_name, "routine_type", &left.data_type, &right.data_type) &
             self.compare_entity_option_property(schema_name, "routine", &left.routine_name, "type_udt_name", &left.type_udt_name, &right.type_udt_name) &
             self.compare_entity_property(schema_name, "routine", &left.routine_name, "routine_body", &left.routine_body, &right.routine_body) &
-            self.compare_entity_property(schema_name, "routine", &left.routine_name, "routine_definition", &left.routine_definition, &right.routine_definition) &
+                if self.ignore_whitespace {
+                    self.compare_entity_property_ignore_whitespace(schema_name, "routine", &left.routine_name, "routine_definition", &left.routine_definition, &right.routine_definition)
+                } else {
+                    self.compare_entity_property(schema_name, "routine", &left.routine_name, "routine_definition", &left.routine_definition, &right.routine_definition)
+                }
+                &
             self.compare_entity_option_property(schema_name, "routine", &left.routine_name, "external_name", &left.external_name, &right.external_name) &
             self.compare_entity_property(schema_name, "routine", &left.routine_name, "external_language", &left.external_language, &right.external_language) &
             self.compare_entity_property(schema_name, "routine", &left.routine_name, "is_deterministic", &left.is_deterministic, &right.is_deterministic) &
@@ -256,6 +267,11 @@ impl Comparer {
     
     fn compare_table_column(&mut self, schema_name: &str, table_name: &str, left: &mut Column, right: &mut Column) -> bool {
         let same =
+            if self.ignore_column_ordinal {
+                true
+            } else {
+               self.compare_column_property(schema_name, table_name, &left.column_name, "ordinal_position", &left.ordinal_position, &right.ordinal_position)
+            } &
             self.compare_column_option_property(schema_name, table_name, &left.column_name, "column_default", &left.column_default, &right.column_default) &
             self.compare_column_property(schema_name, table_name, &left.column_name, "is_nullable", &left.is_nullable, &right.is_nullable) &
             self.compare_column_property(schema_name, table_name, &left.column_name, "data_type", &left.data_type, &right.data_type) &
@@ -296,6 +312,16 @@ impl Comparer {
 
     fn compare_entity_property<T>(&mut self, schema_name: &str, entity_type: &str, entity_name: &str, property_name: &str, left_value: T, right_value: T) -> bool where T: PartialEq, T: Display {
         let same = left_value == right_value;
+
+        if !same {
+            println!("schema: '{}': {} '{}': property '{}': changed from '{}' to '{}'", schema_name, entity_type, entity_name, property_name, left_value, right_value);
+        }
+
+        same
+    }
+
+    fn compare_entity_property_ignore_whitespace(&mut self, schema_name: &str, entity_type: &str, entity_name: &str, property_name: &str, left_value: &str, right_value: &str) -> bool{
+        let same = left_value.eq_ignore_whitespace(right_value);
 
         if !same {
             println!("schema: '{}': {} '{}': property '{}': changed from '{}' to '{}'", schema_name, entity_type, entity_name, property_name, left_value, right_value);

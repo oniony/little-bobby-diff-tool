@@ -1,6 +1,7 @@
 mod db;
 mod compare;
 mod cli;
+mod string;
 
 use std::process::ExitCode;
 use postgres::Error;

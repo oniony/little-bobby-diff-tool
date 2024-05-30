@@ -4,7 +4,7 @@ set -u -o pipefail
 
 result=0
 
-for dir in $(find . -mindepth 1 -type d); do
+for dir in $(find . -mindepth 1 -type d | sort); do
 	test=$(basename $dir)
 
 	echo -n "$test: "

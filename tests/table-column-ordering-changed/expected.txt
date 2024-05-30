@@ -1,0 +1,2 @@
+schema: 'public': table 'employee': column 'name': property 'ordinal_position': changed from '2' to '3'
+schema: 'public': table 'employee': column 'role_id': property 'ordinal_position': changed from '3' to '2'

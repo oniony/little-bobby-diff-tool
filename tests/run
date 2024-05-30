@@ -46,9 +46,16 @@ wait-db 8912
 load-schema 8911 $test left.sql
 load-schema 8912 $test right.sql
 
-../target/debug/lbdt --left=postgresql://postgres:postgres@localhost:8911/postgres --right=postgresql://postgres:postgres@localhost:8912/postgres --schema=public >|$test/actual.txt || true
+export extra_args="$(cat $test/args)"
 
-stop-db 8911 >/dev/null || true
-stop-db 8912 >/dev/null || true
+../target/debug/lbdt \
+	--left=postgresql://postgres:postgres@localhost:8911/postgres \
+	--right=postgresql://postgres:postgres@localhost:8912/postgres \
+	--schema=public \
+	$extra_args \
+	>|$test/actual.txt || true
+
+#stop-db 8911 >/dev/null || true
+#stop-db 8912 >/dev/null || true
 
 diff $test/expected.txt $test/actual.txt

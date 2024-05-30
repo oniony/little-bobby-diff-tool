@@ -9,10 +9,14 @@ Little Bobby Diff Tool is a CLI tool to compare database schemas.
 It currently compares the following across one or more schemas.
 
 - [X] Tables
-- [X] Table columns
-- [X] Constraints
+  - [X] Optionally ignoring column ordering differences
+  - [X] Constraints
 - [X] Views
 - [X] Routines
+  - [X] Optionally ignoring whitespace differences
+
+The following are currently not compared:
+
 - [ ] Sequences
 - [ ] Permissions
   - [ ] Roles
@@ -43,25 +47,23 @@ lbdt --left URL --right URL --schema SCHEMA [--schema SCHEMA ...]
 ```sh
 lbdt --left postgres://user:pass@localhost:5432/postgres \
      --right postgres://user:pass@localhost:85432/postgres \
-     --schema public
-     --schema other
+     --schema public \
+     --schema other \
+     --ignore-column-ordinal
 ```
-
-## Options
-
-* `left` -- the left, or 'before', database URL
-* `right` -- the right, or 'after', database URL
-* `schema` -- a schema to compare. May be repeated.
 
 # Versions
 
-_tbd_
+## 0.6.0
+
+* Added `--ignore-column-ordinal` flag to ignore column ordering differences.
+* Added `--ignore-whitespace` flag to ignore routine whitespace differences.
 
 # About
 
-LBDT is written and maintained by Paul Ruane (<paul.ruane@oniony.com>) and is available at <http://github.com/oniony/little-bobby-diff-tool/>.
+Little Bobby Diff Tool is written and maintained by Paul Ruane (<paul.ruane@oniony.com>) and is available at <http://github.com/oniony/little-bobby-diff-tool/>.
 
-LBDT is written in Rust: <http://rust-lang.org/>
+Written in Rust: <http://rust-lang.org/>
 
 - - -
 

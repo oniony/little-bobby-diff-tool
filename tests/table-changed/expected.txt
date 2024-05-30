@@ -6,3 +6,5 @@ schema: 'public': table 'department': column 'id': property 'identity_generation
 schema: 'public': table 'department': column 'id': property 'is_updatable': changed from 'YES' to 'NO'
 schema: 'public': table 'department': column 'name': property 'is_nullable': changed from 'NO' to 'YES'
 schema: 'public': table 'department': column 'name': property 'is_updatable': changed from 'YES' to 'NO'
+schema: 'public': table 'department': constraint 'department_pkey': removed
+schema: 'public': table 'department': constraint 'department_name_key': removed
