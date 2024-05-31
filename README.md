@@ -1,6 +1,6 @@
 ![Little Bobby Diff Tool](https://github.com/oniony/little-bobby-diff-tool/blob/main/graphics/lbdt.png?raw=true)
 
-[![Build Status](https://github.com/oniony/little-bobby-diff-tool/actions/workflows/build.yml/badge.svg)](https://github.com/oniony/little-bobby-diff-tool/actions/workflows/release.yml)
+[![Build Status](https://github.com/oniony/little-bobby-diff-tool/actions/workflows/release.yml/badge.svg)](https://github.com/oniony/little-bobby-diff-tool/actions/workflows/release.yml)
 
 # Overview
 
