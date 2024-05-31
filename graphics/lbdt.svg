@@ -8,7 +8,7 @@
    version="1.1"
    id="svg1"
    inkscape:version="1.3.2 (091e20ef0f, 2023-11-25, custom)"
-   sodipodi:docname="logo.svg"
+   sodipodi:docname="lbdt.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -23,9 +23,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
-     inkscape:zoom="1.4467452"
-     inkscape:cx="416.10644"
-     inkscape:cy="636.60137"
+     inkscape:zoom="1.0230034"
+     inkscape:cx="272.72638"
+     inkscape:cy="349.94997"
      inkscape:window-width="1920"
      inkscape:window-height="1057"
      inkscape:window-x="0"
@@ -33,70 +33,38 @@
      inkscape:window-maximized="1"
      inkscape:current-layer="layer1" />
   <defs
-     id="defs1">
-    <rect
-       x="249.25908"
-       y="238.77386"
-       width="265.84162"
-       height="322.48598"
-       id="rect15" />
-    <rect
-       x="134.96756"
-       y="140.59446"
-       width="527.48488"
-       height="459.93626"
-       id="rect13" />
-  </defs>
+     id="defs1" />
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1">
-    <text
-       xml:space="preserve"
-       transform="matrix(0.23707009,0,0,0.23707009,20.876667,16.159587)"
-       id="text13"
-       style="font-size:4px;line-height:60px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;white-space:pre;shape-inside:url(#rect13);display:inline;fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
-    <text
-       xml:space="preserve"
-       transform="matrix(0.23707009,0,0,0.23707009,20.876667,16.159587)"
-       id="text15"
-       style="font-size:66.6667px;line-height:1000px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;white-space:pre;shape-inside:url(#rect15);display:inline;fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"><tspan
-         x="249.25977"
-         y="1078.5775"
-         id="tspan2"><tspan
-           dx="0 7.4283667 3.9322815 7.9101362 8.1445103 7.4283676"
-           style="font-size:13.3333px"
-           id="tspan1">LITTLE</tspan></tspan></text>
     <rect
-       style="fill:#93ac93;stroke:none;stroke-width:0.505662;stroke-dasharray:none;paint-order:stroke fill markers"
-       id="rect25"
-       width="185.0256"
-       height="23.254452"
-       x="13.254878"
-       y="134.55226"
-       ry="0"
-       rx="0" />
+       style="fill:#0a4d23;stroke:#aa8800;stroke-width:2.23412;paint-order:stroke fill markers;fill-opacity:1"
+       id="rect1"
+       width="182.86382"
+       height="25.827009"
+       x="12.632585"
+       y="54.889313"
+       ry="2.9542139"
+       inkscape:export-filename="../../../lbdt.png"
+       inkscape:export-xdpi="68.612328"
+       inkscape:export-ydpi="68.612328" />
     <text
        xml:space="preserve"
-       style="font-size:15.0601px;line-height:16.3122px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;stroke:#f9f9f9;stroke-width:1.79221;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
-       x="106.28413"
-       y="151.37224"
-       id="text29"
-       inkscape:export-filename="../graphics/lbdt.png"
-       inkscape:export-xdpi="65.535843"
-       inkscape:export-ydpi="65.535843"><tspan
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:16.961px;line-height:254.416px;font-family:'Crayon Libre';-inkscape-font-specification:'Crayon Libre, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;fill:#ffaacc;stroke:#000000;stroke-width:0.424026px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="23.018093"
+       y="73.759827"
+       id="text1"><tspan
          sodipodi:role="line"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:15.0601px;line-height:16.3122px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;text-anchor:middle;fill:#00d400;stroke:#f9f9f9;stroke-width:1.79221;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
-         x="106.28413"
-         y="151.37224"
-         id="tspan64"><tspan
-   id="tspan70"
-   style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:15.0601px;line-height:16.3122px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;text-anchor:middle;fill:#000000;stroke:#f9f9f9;stroke-width:1.79221;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"><tspan
-     style="line-height:16.3122px;text-align:center;text-anchor:middle;fill:#ff0000;stroke:#f9f9f9;stroke-width:1.79221;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
-     id="tspan25">little</tspan><tspan
-     style="line-height:16.3122px;text-align:center;text-anchor:middle;fill:#ffcc00;stroke:#f9f9f9;stroke-width:1.79221;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
-     id="tspan63">bobby</tspan></tspan><tspan
-   id="tspan69"
-   style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:15.0601px;line-height:16.3122px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:center;text-anchor:middle;fill:#0055d4;stroke:#f9f9f9;stroke-width:1.79221;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers">diff</tspan>tool</tspan></text>
+         id="tspan1"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:16.961px;font-family:'Crayon Libre';-inkscape-font-specification:'Crayon Libre, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#ffaacc;stroke:none;stroke-width:0.424026px"
+         x="23.018093"
+         y="73.759827">little<tspan
+   style="fill:#ffe680;stroke-width:0.424026px"
+   id="tspan2">bobby<tspan
+   style="fill:#80b3ff;stroke-width:0.424026px"
+   id="tspan3">diff</tspan><tspan
+   style="fill:#afe9af;stroke-width:0.424026px"
+   id="tspan4">tool</tspan></tspan></tspan></text>
   </g>
 </svg>
