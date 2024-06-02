@@ -157,7 +157,6 @@ WHERE routine_schema = $1;"#,
         }
 
         Ok(routines)
-        
     }
 
     pub fn columns(&mut self, schema_name: &str, table_name: &str) -> Result<Vec<Column>, Error> {
@@ -259,6 +258,55 @@ WHERE table_schema = $1 AND
 
         Ok(table_constraints)
     }
+    
+    pub fn sequences(&mut self, schema_name: &str) -> Result<Vec<Sequence>, Error> {
+        let mut sequences = Vec::new();
+
+        let rows = self.connection.query(r#"
+SELECT sequence_name,
+       data_type,
+       numeric_precision,
+       numeric_precision_radix,
+       numeric_scale,
+       start_value,
+       minimum_value,
+       maximum_value,
+       increment,
+       cycle_option
+FROM information_schema.sequences
+WHERE sequence_schema = $1;"#,
+                                         &[&schema_name])?;
+
+        for row in rows {
+            let sequence_name: String = row.get(0);
+            let data_type: String = row.get(1);
+            let numeric_precision: i32 = row.get(2);
+            let numeric_precision_radix: i32 = row.get(3);
+            let numeric_scale: i32 = row.get(4);
+            let start_value: String = row.get(5);
+            let minimum_value: String = row.get(6);
+            let maximum_value: String = row.get(7);
+            let increment: String = row.get(8);
+            let cycle_option: String = row.get(9);
+
+            let sequence = Sequence {
+                sequence_name,
+                data_type,
+                numeric_precision,
+                numeric_precision_radix,
+                numeric_scale,
+                start_value,
+                minimum_value,
+                maximum_value,
+                increment,
+                cycle_option,
+            };
+
+            sequences.push(sequence);
+        }
+
+        Ok(sequences)
+    }
 }
 
 #[derive(Clone, PartialEq)]
@@ -326,4 +374,18 @@ pub struct TableConstraint {
     pub is_deferrable: String,
     pub initially_deferred: String,
     pub nulls_distinct: Option<String>,
+}
+
+#[derive(Clone, PartialEq)]
+pub struct Sequence {
+    pub sequence_name: String,
+    pub data_type: String,
+    pub numeric_precision: i32,
+    pub numeric_precision_radix: i32,
+    pub numeric_scale: i32,
+    pub start_value: String,
+    pub minimum_value: String,
+    pub maximum_value: String,
+    pub increment: String,
+    pub cycle_option: String,
 }

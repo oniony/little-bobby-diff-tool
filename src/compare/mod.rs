@@ -5,7 +5,7 @@ use std::fmt::{Display};
 use postgres::Error;
 use crate::compare::report::{Report, ReportEntry, Thing};
 use crate::compare::report::ReportEntry::{Addition, Change, Match, Removal};
-use crate::compare::report::Thing::{Column, Constraint, Property, Routine, Schema, Table, View};
+use crate::compare::report::Thing::{Column, Constraint, Property, Routine, Schema, Sequence, Table, View};
 use crate::db;
 use crate::db::{Database};
 use crate::string::{EqualIgnoreWhitespace};
@@ -41,6 +41,9 @@ impl Comparer {
 
         let mut routine_entries = self.compare_routines(schema)?;
         report.entries.append(&mut routine_entries);
+        
+        let mut sequence_entries = self.compare_sequences(schema)?;
+        report.entries.append(&mut sequence_entries);
         
         Ok(report)
     }
@@ -128,17 +131,17 @@ impl Comparer {
 
         Ok(entries)
     }
-    
+
     fn compare_routines(&mut self, schema_name: &str) -> Result<Vec<ReportEntry>, Error> {
         let left_routines = self.left_db.routines(schema_name)?;
         let right_routines = self.right_db.routines(schema_name)?;
-    
+
         let mut right_routines_map : HashMap<String, db::Routine> = right_routines.into_iter().map(|t| (t.routine_name.clone(), t)).collect();
         let mut entries = Vec::new();
-    
+
         for left_routine in left_routines {
             let right_routine = right_routines_map.get(&left_routine.routine_name);
-    
+
             match right_routine {
                 None => {
                     entries.push(Removal { path: vec![Schema(String::from(schema_name))], thing: Routine(left_routine.routine_name) });
@@ -151,10 +154,42 @@ impl Comparer {
                 }
             }
         }
-    
+
         if right_routines_map.len() > 0 {
             for right_routine in right_routines_map.values() {
                 entries.push(Addition { path: vec![Schema(String::from(schema_name))], thing: Routine(right_routine.routine_name.clone()) });
+            }
+        }
+
+        Ok(entries)
+    }
+
+    fn compare_sequences(&mut self, schema_name: &str) -> Result<Vec<ReportEntry>, Error> {
+        let left_sequences = self.left_db.sequences(schema_name)?;
+        let right_sequences = self.right_db.sequences(schema_name)?;
+    
+        let mut right_sequences_map : HashMap<String, db::Sequence> = right_sequences.into_iter().map(|t| (t.sequence_name.clone(), t)).collect();
+        let mut entries = Vec::new();
+    
+        for left_sequence in left_sequences {
+            let right_sequence = right_sequences_map.get(&left_sequence.sequence_name);
+    
+            match right_sequence {
+                None => {
+                    entries.push(Removal { path: vec![Schema(String::from(schema_name))], thing: Sequence(left_sequence.sequence_name) });
+                },
+                Some(rs) => {
+                    let mut sequence_entries = self.compare_sequence(schema_name, &left_sequence, rs);
+                    entries.append(&mut sequence_entries);
+
+                    right_sequences_map.remove(&left_sequence.sequence_name);
+                }
+            }
+        }
+    
+        if right_sequences_map.len() > 0 {
+            for right_sequence in right_sequences_map.values() {
+                entries.push(Addition { path: vec![Schema(String::from(schema_name))], thing: Sequence(right_sequence.sequence_name.clone()) });
             }
         }
         
@@ -217,7 +252,26 @@ impl Comparer {
         
         entries
     }
-    
+
+    fn compare_sequence(&mut self, schema_name: &str, left: &db::Sequence, right: &db::Sequence) -> Vec<ReportEntry> {
+        let mut entries = Vec::new();
+
+        //TODO work out how to better clone this
+        let path = || vec![Schema(String::from(schema_name)), Sequence(left.sequence_name.clone())];
+
+        entries.push(self.compare_property(path(), "data_type", &left.data_type, &right.data_type));
+        entries.push(self.compare_property(path(), "numeric_precision", &left.numeric_precision, &right.numeric_precision));
+        entries.push(self.compare_property(path(), "numeric_precision_radix", &left.numeric_precision_radix, &right.numeric_precision_radix));
+        entries.push(self.compare_property(path(), "numeric_scale", &left.numeric_scale, &right.numeric_scale));
+        entries.push(self.compare_property(path(), "start_value", &left.start_value, &right.start_value));
+        entries.push(self.compare_property(path(), "minimum_value", &left.minimum_value, &right.minimum_value));
+        entries.push(self.compare_property(path(), "maximum_value", &left.maximum_value, &right.maximum_value));
+        entries.push(self.compare_property(path(), "increment", &left.increment, &right.increment));
+        entries.push(self.compare_property(path(), "cycle_option", &left.cycle_option, &right.cycle_option));
+
+        entries
+    }
+
     fn compare_table_columns(&mut self, schema_name: &str, table_name: &str) -> Result<Vec<ReportEntry>, Error> {
         let left_columns = self.left_db.columns(schema_name, table_name)?;
         let right_columns = self.right_db.columns(schema_name, table_name)?;

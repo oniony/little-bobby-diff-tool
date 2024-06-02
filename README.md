@@ -54,9 +54,13 @@ lbdt --left postgres://user:pass@localhost:5432/postgres \
 
 # Versions
 
+## 0.9.0
+
+* Added comparison of sequences.
+
 ## 0.8.0
 
-* Generate report rather than print in-situ
+* Generate report rather than print in-situ.
 
 ## 0.6.0
 

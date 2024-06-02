@@ -55,7 +55,7 @@ export extra_args="$(cat $test/args)"
 	$extra_args \
 	>|$test/actual.txt || true
 
-#stop-db 8911 >/dev/null || true
-#stop-db 8912 >/dev/null || true
-
 diff $test/expected.txt $test/actual.txt
+
+stop-db 8911 >/dev/null || true
+stop-db 8912 >/dev/null || true

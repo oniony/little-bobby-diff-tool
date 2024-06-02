@@ -40,6 +40,7 @@ pub enum Thing {
     Property(String),
     Routine(String),
     Schema(String),
+    Sequence(String),
     Table(String),
     View(String),
 }
@@ -52,6 +53,7 @@ impl Display for Thing {
             Thing::Property(name) => write!(f, "property '{}'", name),
             Thing::Routine(name) => write!(f, "routine '{}'", name),
             Thing::Schema(name) => write!(f, "schema '{}'", name),
+            Thing::Sequence(name) => write!(f, "sequence '{}'", name),
             Thing::Table(name) => write!(f, "table '{}'", name),
             Thing::View(name) => write!(f, "view '{}'", name),
         }
