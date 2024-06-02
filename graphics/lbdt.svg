@@ -26,15 +26,16 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
-     inkscape:zoom="1.0230034"
-     inkscape:cx="272.72638"
-     inkscape:cy="349.94997"
+     inkscape:zoom="0.72337264"
+     inkscape:cx="252.98164"
+     inkscape:cy="312.42542"
      inkscape:window-width="1920"
      inkscape:window-height="1057"
      inkscape:window-x="0"
      inkscape:window-y="23"
      inkscape:window-maximized="1"
-     inkscape:current-layer="layer1" />
+     inkscape:current-layer="layer1"
+     showgrid="false" />
   <defs
      id="defs1" />
   <g
@@ -55,8 +56,8 @@
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:16.961px;line-height:254.416px;font-family:'Crayon Libre';-inkscape-font-specification:'Crayon Libre, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;fill:#ffaacc;stroke:#000000;stroke-width:0.424026px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="23.018093"
-       y="73.759827"
+       x="21.959759"
+       y="73.230659"
        id="text1"
        inkscape:export-filename="lbdt.png"
        inkscape:export-xdpi="69.449997"
@@ -64,13 +65,15 @@
          sodipodi:role="line"
          id="tspan1"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:16.961px;font-family:'Crayon Libre';-inkscape-font-specification:'Crayon Libre, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#ffaacc;stroke:none;stroke-width:0.424026px"
-         x="23.018093"
-         y="73.759827">little<tspan
-   style="fill:#ffe680;stroke-width:0.424026px"
-   id="tspan2">bobby<tspan
-   style="fill:#80b3ff;stroke-width:0.424026px"
-   id="tspan3">diff</tspan><tspan
-   style="fill:#afe9af;stroke-width:0.424026px"
-   id="tspan4">tool</tspan></tspan></tspan></text>
+         x="21.959759"
+         y="73.230659"><tspan
+           style="fill:#e9afaf"
+           id="tspan6">little </tspan><tspan
+           style="fill:#fff6d5;stroke-width:0.424026px"
+           id="tspan2">bobby </tspan><tspan
+           id="tspan8"
+           style="fill:#afc6e9;stroke-width:0.424026px">diff </tspan><tspan
+           id="tspan7"
+           style="fill:#d7f4d7;stroke-width:0.424026px">tool</tspan></tspan></text>
   </g>
 </svg>
