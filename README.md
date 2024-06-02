@@ -14,10 +14,10 @@ It currently compares the following across one or more schemas.
 - [X] Views
 - [X] Routines
   - [X] Optionally ignoring whitespace differences
+- [X] Sequences
 
 The following are currently not compared:
 
-- [ ] Sequences
 - [ ] Permissions
   - [ ] Roles
   - [ ] Column grants
