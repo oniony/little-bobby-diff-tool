@@ -1,1 +1,1 @@
-schema: 'public': table 'employee': column 'age': added
+schema 'public': table 'employee': column 'age' added

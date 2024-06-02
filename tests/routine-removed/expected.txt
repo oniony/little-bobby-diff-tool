@@ -1,1 +1,1 @@
-schema: 'public': routine 'create_employee': removed
+schema 'public': routine 'create_employee' removed

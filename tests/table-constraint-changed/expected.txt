@@ -1,2 +1,2 @@
-schema: 'public': table 'employee': constraint 'my_constraint': property 'constraint_type': changed from 'PRIMARY KEY' to 'FOREIGN KEY'
-schema: 'public': table 'employee': constraint 'employee_pkey': added
+schema 'public': table 'employee': constraint 'my_constraint': property 'constraint_type': changed from 'PRIMARY KEY' to 'FOREIGN KEY'
+schema 'public': table 'employee': constraint 'employee_pkey' added

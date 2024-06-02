@@ -1,10 +1,10 @@
-schema: 'public': table 'department': property 'table_type': changed from 'BASE TABLE' to 'VIEW'
-schema: 'public': table 'department': property 'is_insertable_into': changed from 'YES' to 'NO'
-schema: 'public': table 'department': column 'id': property 'is_nullable': changed from 'NO' to 'YES'
-schema: 'public': table 'department': column 'id': property 'is_identity': changed from 'YES' to 'NO'
-schema: 'public': table 'department': column 'id': property 'identity_generation': changed from 'ALWAYS' to '<none>'
-schema: 'public': table 'department': column 'id': property 'is_updatable': changed from 'YES' to 'NO'
-schema: 'public': table 'department': column 'name': property 'is_nullable': changed from 'NO' to 'YES'
-schema: 'public': table 'department': column 'name': property 'is_updatable': changed from 'YES' to 'NO'
-schema: 'public': table 'department': constraint 'department_pkey': removed
-schema: 'public': table 'department': constraint 'department_name_key': removed
+schema 'public': table 'department': property 'table_type': changed from 'BASE TABLE' to 'VIEW'
+schema 'public': table 'department': property 'is_insertable_into': changed from 'YES' to 'NO'
+schema 'public': table 'department': column 'id': property 'is_nullable': changed from 'NO' to 'YES'
+schema 'public': table 'department': column 'id': property 'is_identity': changed from 'YES' to 'NO'
+schema 'public': table 'department': column 'id': property 'identity_generation': changed from 'ALWAYS' to '<none>'
+schema 'public': table 'department': column 'id': property 'is_updatable': changed from 'YES' to 'NO'
+schema 'public': table 'department': column 'name': property 'is_nullable': changed from 'NO' to 'YES'
+schema 'public': table 'department': column 'name': property 'is_updatable': changed from 'YES' to 'NO'
+schema 'public': table 'department': routine 'department_pkey' removed
+schema 'public': table 'department': routine 'department_name_key' removed

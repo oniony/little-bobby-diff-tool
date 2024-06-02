@@ -54,6 +54,10 @@ lbdt --left postgres://user:pass@localhost:5432/postgres \
 
 # Versions
 
+## 0.8.0
+
+* Generate report rather than print in-situ
+
 ## 0.6.0
 
 * Added `--ignore-column-ordinal` flag to ignore column ordering differences.
@@ -61,7 +65,9 @@ lbdt --left postgres://user:pass@localhost:5432/postgres \
 
 # About
 
-Little Bobby Diff Tool is written and maintained by Paul Ruane (<paul.ruane@oniony.com>) and is available at <http://github.com/oniony/little-bobby-diff-tool/>.
+Little Bobby Diff Tool is written and maintained by Paul Ruane
+(<paul.ruane@oniony.com>) and is available at
+<http://github.com/oniony/little-bobby-diff-tool/>.
 
 Written in Rust: <http://rust-lang.org/>
 
@@ -69,7 +75,6 @@ Written in Rust: <http://rust-lang.org/>
 
 Copyright 2024 Paul Ruane
 
-Copying and distribution of this file, with or without modification,
-are permitted in any medium without royalty provided the copyright
-notice and this notice are preserved.  This file is offered as-is,
-without any warranty.
+Copying and distribution of this file, with or without modification, are
+permitted in any medium without royalty provided the copyright notice and this
+notice are preserved.  This file is offered as-is, without any warranty.
