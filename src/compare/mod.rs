@@ -399,7 +399,8 @@ impl Comparer {
         }
     }
 
-    fn compare_option_property_ignore_whitespace(&mut self, mut path: Vec<Thing>, property_name: &str, left_value: &Option<T>, right_value: &Option<T>) -> ReportEntry {
+    fn compare_option_property_ignore_whitespace(&mut self, mut path: Vec<Thing>, property_name: &str, left_value: &Option<T>, right_value: &Option<T>) -> ReportEntry
+        where T: PartialEq, T: Display {
         path.push(Property(String::from(property_name)));
         
         let l = left_value.as_ref().map_or(String::from("<none>"), |v| v.to_string());
