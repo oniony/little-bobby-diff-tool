@@ -132,7 +132,7 @@ WHERE routine_schema = $1;"#,
             let data_type: Option<String> = row.get(2);
             let type_udt_name: Option<String> = row.get(3);
             let routine_body: String = row.get(4);
-            let routine_definition: String = row.get(5);
+            let routine_definition: Option<String> = row.get(5);
             let external_name: Option<String> = row.get(6);
             let external_language: String = row.get(7);
             let is_deterministic: String = row.get(8);
@@ -359,7 +359,7 @@ pub struct Routine {
     pub data_type: Option<String>,
     pub type_udt_name: Option<String>,
     pub routine_body: String,
-    pub routine_definition: String,
+    pub routine_definition: Option<String>,
     pub external_name: Option<String>,
     pub external_language: String,
     pub is_deterministic: String,

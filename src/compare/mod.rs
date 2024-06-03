@@ -238,9 +238,9 @@ impl Comparer {
         
         entries.push(
             if self.ignore_whitespace {
-                self.compare_property_ignore_whitespace(path(), "routine_definition", &left.routine_definition, &right.routine_definition)
+                self.compare_option_property_ignore_whitespace(path(), "routine_definition", &left.routine_definition, &right.routine_definition)
             } else {
-                self.compare_property(path(), "routine_definition", &left.routine_definition, &right.routine_definition)
+                self.compare_option_property(path(), "routine_definition", &left.routine_definition, &right.routine_definition)
             }
         );
         
@@ -395,16 +395,19 @@ impl Comparer {
         
         match left_value == right_value {
             true => Match { path, left_value: l, right_value: r },
-            false => Change { path, left_value: l, right_value: r},
+            false => Change { path, left_value: l, right_value: r },
         }
     }
 
-    fn compare_property_ignore_whitespace(&mut self, mut path: Vec<Thing>, property_name: &str, left_value: &str, right_value: &str) -> ReportEntry {
+    fn compare_option_property_ignore_whitespace(&mut self, mut path: Vec<Thing>, property_name: &str, left_value: &Option<T>, right_value: &Option<T>) -> ReportEntry {
         path.push(Property(String::from(property_name)));
         
-        match left_value.eq_ignore_whitespace(right_value) {
-            true => Match { path, left_value: left_value.to_string(), right_value: right_value.to_string() },
-            false => Change { path, left_value: left_value.to_string(), right_value: right_value.to_string() },
+        let l = left_value.as_ref().map_or(String::from("<none>"), |v| v.to_string());
+        let r = right_value.as_ref().map_or(String::from("<none>"), |v| v.to_string());
+
+        match l.eq_ignore_whitespace(r) {
+            true => Match { path, left_value: l, right_value: r },
+            false => Change { path, left_value: l, right_value: r },
         }
     }
 }
