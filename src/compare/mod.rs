@@ -406,7 +406,7 @@ impl Comparer {
         let l = left_value.as_ref().map_or(String::from("<none>"), |v| v.to_string());
         let r = right_value.as_ref().map_or(String::from("<none>"), |v| v.to_string());
 
-        match l.eq_ignore_whitespace(r) {
+        match &l.eq_ignore_whitespace(&r) {
             true => Match { path, left_value: l, right_value: r },
             false => Change { path, left_value: l, right_value: r },
         }
