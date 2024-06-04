@@ -128,7 +128,7 @@ WHERE routine_schema = $1;"#,
 
         for row in rows {
             let routine_name: String = row.get(0);
-            let routine_type: String = row.get(1);
+            let routine_type: Option<String> = row.get(1);
             let data_type: Option<String> = row.get(2);
             let type_udt_name: Option<String> = row.get(3);
             let routine_body: String = row.get(4);
@@ -355,7 +355,7 @@ pub struct View {
 #[derive(Clone, PartialEq)]
 pub struct Routine {
     pub routine_name: String,
-    pub routine_type: String,
+    pub routine_type: Option<String>,
     pub data_type: Option<String>,
     pub type_udt_name: Option<String>,
     pub routine_body: String,

@@ -231,7 +231,7 @@ impl Comparer {
         //TODO work out how to better clone this
         let path = || vec![Schema(String::from(schema_name)), Routine(left.routine_name.clone())];
         
-        entries.push(self.compare_property(path(), "routine_type", &left.routine_type, &right.routine_type));
+        entries.push(self.compare_option_property(path(), "routine_type", &left.routine_type, &right.routine_type));
         entries.push(self.compare_option_property(path(), "data_type", &left.data_type, &right.data_type));
         entries.push(self.compare_option_property(path(), "type_udt_name", &left.type_udt_name, &right.type_udt_name));
         entries.push(self.compare_property(path(), "routine_body", &left.routine_body, &right.routine_body));
