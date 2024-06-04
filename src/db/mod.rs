@@ -123,7 +123,14 @@ SELECT routine_name,
        is_null_call,
        security_type
 FROM information_schema.routines
-WHERE routine_schema = $1;"#,
+WHERE routine_schema = $1
+AND routine_name IN (
+    SELECT routine_name
+    FROM information_schema.routines
+    WHERE routine_schema = $1
+    GROUP BY routine_name
+    HAVING count(*) = 1
+);"#,
                                          &[&schema_name])?;
 
         for row in rows {
