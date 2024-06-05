@@ -112,7 +112,7 @@ WHERE table_schema = $1;"#,
 
         let rows = self.connection.query(r#"
 SELECT r.routine_name || '(' || COALESCE((
-	        SELECT string_agg(p.parameter_name || ' ' || p.parameter_mode || ' ' || p.udt_schema || '.' || p.udt_name, ', ' order by p.ordinal_position)
+	        SELECT string_agg(COALESCE(p.parameter_name, '$' || p.ordinal_position) || ' ' || p.parameter_mode || ' ' || p.udt_schema || '.' || p.udt_name, ', ' order by p.ordinal_position)
             FROM information_schema.parameters p
             WHERE p.specific_name = r.specific_name
             GROUP BY p.specific_name

@@ -1,0 +1,1 @@
+schema 'test': routine 'create_employee($1 IN pg_catalog.int4, $2 IN pg_catalog.int4)' added
