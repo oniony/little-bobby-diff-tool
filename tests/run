@@ -24,18 +24,56 @@ function wait-db() {
 	done
 }
 
+function create-schema() {
+	local port=$1
+	local name=$2
+
+	psql postgresql://postgres:postgres@localhost:$port/postgres -c "CREATE SCHEMA $name;" >/dev/null
+}
+
+function drop-schema() {
+	local port=$1
+	local name=$2
+
+	psql postgresql://postgres:postgres@localhost:$port/postgres -c "DROP SCHEMA $name CASCADE;" >/dev/null 2>&1
+}
+
 function load-schema() {
 	local port=$1
 	local test=$2
 	local filename=$3
 
-	psql --file=$test/$filename postgresql://postgres:postgres@localhost:$port/postgres >/dev/null
+	psql -c "SET search_path TO test;" --file=$test/$filename postgresql://postgres:postgres@localhost:$port/postgres >/dev/null
 }
 
-export test=$1
+function run() {
+	local test=$1
 
-stop-db 8911 >/dev/null || true
-stop-db 8912 >/dev/null || true
+	echo $test
+
+	create-schema 8911 test
+	create-schema 8912 test
+
+	load-schema 8911 $test left.sql
+	load-schema 8912 $test right.sql
+
+	export extra_args="$(cat $test/args)"
+
+	../target/debug/lbdt \
+		--left=postgresql://postgres:postgres@localhost:8911/postgres \
+		--right=postgresql://postgres:postgres@localhost:8912/postgres \
+		--schema=test \
+		$extra_args \
+		>|$test/actual.txt || true
+
+	diff $test/expected.txt $test/actual.txt
+
+	drop-schema 8911 test
+	drop-schema 8912 test
+}
+
+stop-db 8911 || true
+stop-db 8912 || true
 
 start-db 8911
 start-db 8912
@@ -43,19 +81,15 @@ start-db 8912
 wait-db 8911
 wait-db 8912
 
-load-schema 8911 $test left.sql
-load-schema 8912 $test right.sql
-
-export extra_args="$(cat $test/args)"
-
-../target/debug/lbdt \
-	--left=postgresql://postgres:postgres@localhost:8911/postgres \
-	--right=postgresql://postgres:postgres@localhost:8912/postgres \
-	--schema=public \
-	$extra_args \
-	>|$test/actual.txt || true
-
-diff $test/expected.txt $test/actual.txt
+if [[ $# == 0 ]]; then
+	for dir in $(find . -mindepth 1 -type d | sort); do
+		run $dir
+	done
+else
+	for dir in $@; do
+		run $dir
+	done
+fi
 
 stop-db 8911 >/dev/null || true
 stop-db 8912 >/dev/null || true

@@ -111,30 +111,28 @@ WHERE table_schema = $1;"#,
         let mut routines = Vec::new();
 
         let rows = self.connection.query(r#"
-SELECT routine_name,
-       routine_type,
-       data_type,
-       type_udt_name,
-       routine_body,
-       routine_definition,
-       external_name,
-       external_language,
-       is_deterministic,
-       is_null_call,
-       security_type
-FROM information_schema.routines
-WHERE routine_schema = $1
-AND routine_name IN (
-    SELECT routine_name
-    FROM information_schema.routines
-    WHERE routine_schema = $1
-    GROUP BY routine_name
-    HAVING count(*) = 1
-);"#,
+SELECT r.routine_name || '(' || COALESCE((
+	        SELECT string_agg(p.parameter_name || ' ' || p.parameter_mode || ' ' || p.udt_schema || '.' || p.udt_name, ', ' order by p.ordinal_position)
+            FROM information_schema.parameters p
+            WHERE p.specific_name = r.specific_name
+            GROUP BY p.specific_name
+       ), '') || ')' signature,
+       r.routine_type,
+       r.data_type,
+       r.type_udt_name,
+       r.routine_body,
+       r.routine_definition,
+       r.external_name,
+       r.external_language,
+       r.is_deterministic,
+       r.is_null_call,
+       r.security_type
+FROM information_schema.routines r
+WHERE r.routine_schema = $1;"#,
                                          &[&schema_name])?;
 
         for row in rows {
-            let routine_name: String = row.get(0);
+            let signature: String = row.get(0);
             let routine_type: Option<String> = row.get(1);
             let data_type: Option<String> = row.get(2);
             let type_udt_name: Option<String> = row.get(3);
@@ -147,7 +145,7 @@ AND routine_name IN (
             let security_type: String = row.get(10);
 
             let routine = Routine {
-                routine_name,
+                signature,
                 routine_type,
                 data_type,
                 type_udt_name,
@@ -361,7 +359,7 @@ pub struct View {
 
 #[derive(Clone, PartialEq)]
 pub struct Routine {
-    pub routine_name: String,
+    pub signature: String,
     pub routine_type: Option<String>,
     pub data_type: Option<String>,
     pub type_udt_name: Option<String>,

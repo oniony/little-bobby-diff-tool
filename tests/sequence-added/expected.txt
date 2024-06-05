@@ -1,1 +1,1 @@
-schema 'public': sequence 'department_id' added
+schema 'test': sequence 'department_id' added

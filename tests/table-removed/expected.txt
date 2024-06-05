@@ -1,1 +1,1 @@
-schema 'public': table 'department' removed
+schema 'test': table 'department' removed

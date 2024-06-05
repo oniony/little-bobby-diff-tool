@@ -6,7 +6,7 @@ use postgres::Error;
 use crate::compare::report::{Report, ReportEntry, Thing};
 use crate::compare::report::ReportEntry::{Addition, Change, Match, Removal};
 use crate::compare::report::Thing::{Column, Constraint, Property, Routine, Schema, Sequence, Table, View};
-use crate::db;
+use crate::{db};
 use crate::db::{Database};
 use crate::string::{EqualIgnoreWhitespace};
 
@@ -136,28 +136,28 @@ impl Comparer {
         let left_routines = self.left_db.routines(schema_name)?;
         let right_routines = self.right_db.routines(schema_name)?;
 
-        let mut right_routines_map : HashMap<String, db::Routine> = right_routines.into_iter().map(|t| (t.routine_name.clone(), t)).collect();
+        let mut right_routines_map : HashMap<String, db::Routine> = right_routines.into_iter().map(|t| (t.signature.clone(), t)).collect();
         let mut entries = Vec::new();
 
         for left_routine in left_routines {
-            let right_routine = right_routines_map.get(&left_routine.routine_name);
+            let right_routine = right_routines_map.get(&left_routine.signature);
 
             match right_routine {
                 None => {
-                    entries.push(Removal { path: vec![Schema(String::from(schema_name))], thing: Routine(left_routine.routine_name) });
+                    entries.push(Removal { path: vec![Schema(String::from(schema_name))], thing: Routine(left_routine.signature) });
                 },
                 Some(rr) => {
                     let mut routine_entries = self.compare_routine(schema_name, &left_routine, rr);
                     entries.append(&mut routine_entries);
 
-                    right_routines_map.remove(&left_routine.routine_name);
+                    right_routines_map.remove(&left_routine.signature);
                 }
             }
         }
 
         if right_routines_map.len() > 0 {
             for right_routine in right_routines_map.values() {
-                entries.push(Addition { path: vec![Schema(String::from(schema_name))], thing: Routine(right_routine.routine_name.clone()) });
+                entries.push(Addition { path: vec![Schema(String::from(schema_name))], thing: Routine(right_routine.signature.clone()) });
             }
         }
 
@@ -229,7 +229,7 @@ impl Comparer {
         let mut entries = Vec::new();
 
         //TODO work out how to better clone this
-        let path = || vec![Schema(String::from(schema_name)), Routine(left.routine_name.clone())];
+        let path = || vec![Schema(String::from(schema_name)), Routine(left.signature.clone())];
         
         entries.push(self.compare_option_property(path(), "routine_type", &left.routine_type, &right.routine_type));
         entries.push(self.compare_option_property(path(), "data_type", &left.data_type, &right.data_type));
@@ -379,36 +379,43 @@ impl Comparer {
     fn compare_property<T>(&mut self, mut path: Vec<Thing>, property_name: &str, left_value: T, right_value: T) -> ReportEntry
         where T: PartialEq, T: Display {
         path.push(Property(String::from(property_name)));
-        
-        match left_value == right_value {
-            true => Match { path, left_value: left_value.to_string(), right_value: right_value.to_string() },
-            false => Change { path, left_value: left_value.to_string(), right_value: right_value.to_string() },
-        }
-    }
-    
-    fn compare_option_property<T>(&mut self, mut path: Vec<Thing>, property_name: &str, left_value: &Option<T>, right_value: &Option<T>) -> ReportEntry
-        where T: PartialEq, T: Display {
-        path.push(Property(String::from(property_name)));
 
-        let l = left_value.as_ref().map_or(String::from("<none>"), |v| v.to_string());
-        let r = right_value.as_ref().map_or(String::from("<none>"), |v| v.to_string());
-        
-        match left_value == right_value {
-            true => Match { path, left_value: l, right_value: r },
-            false => Change { path, left_value: l, right_value: r },
+        if left_value == right_value {
+            Match { path, left_value: left_value.to_string(), right_value: right_value.to_string() }
+        } else {
+            Change { path, left_value: left_value.to_string(), right_value: right_value.to_string() }
         }
     }
 
-    fn compare_option_property_ignore_whitespace<T>(&mut self, mut path: Vec<Thing>, property_name: &str, left_value: &Option<T>, right_value: &Option<T>) -> ReportEntry
+    fn compare_option_property<T>(&mut self, path: Vec<Thing>, property_name: &str, left_value: &Option<T>, right_value: &Option<T>) -> ReportEntry
+        where T: PartialEq, T: Display {
+        self.compare_option_property_impl(path, property_name, left_value, right_value, &|l: &T, r: &T| l == r)
+    }
+
+    fn compare_option_property_ignore_whitespace<T>(&mut self, path: Vec<Thing>, property_name: &str, left_value: &Option<T>, right_value: &Option<T>) -> ReportEntry
+        where T: PartialEq, T: Display {
+        self.compare_option_property_impl(path, property_name, left_value, right_value, &|l: &T, r: &T| l.to_string().as_str().eq_ignore_whitespace(r.to_string().as_str()))
+    }
+
+    fn compare_option_property_impl<T>(&mut self, mut path: Vec<Thing>, property_name: &str, left_value: &Option<T>, right_value: &Option<T>, compare: &dyn Fn(&T, &T) -> bool) -> ReportEntry
         where T: PartialEq, T: Display {
         path.push(Property(String::from(property_name)));
         
-        let l = left_value.as_ref().map_or(String::from("<none>"), |v| v.to_string());
-        let r = right_value.as_ref().map_or(String::from("<none>"), |v| v.to_string());
+        if left_value.is_none() && right_value.is_none() {
+            return Match { path, left_value: String::from("<none>"), right_value: String::from("<none>") };
+        }
+        
+        if left_value.is_none() || right_value.is_none() {
+            return Change { path, left_value: left_value.as_ref().map_or(String::from("<none>"), |v| v.to_string()), right_value: right_value.as_ref().map_or(String::from("<none>"), |v| v.to_string()) };
+        }
+        
+        let left = left_value.as_ref().unwrap();
+        let right = right_value.as_ref().unwrap();
 
-        match l.as_str().eq_ignore_whitespace(r.as_str()) {
-            true => Match { path, left_value: l, right_value: r },
-            false => Change { path, left_value: l, right_value: r },
+        if compare(left, right) {
+            Match { path, left_value: left.to_string(), right_value: right.to_string() }
+        } else {
+            Change { path, left_value: left.to_string(), right_value: right.to_string() }
         }
     }
 }

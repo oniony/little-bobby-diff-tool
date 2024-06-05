@@ -1,1 +1,1 @@
-schema 'public': sequence 'department_id' removed
+schema 'test': sequence 'department_id' removed

@@ -2,16 +2,16 @@
 
 ## Usage
 
-To run a single test:
+Run specific tests:
 
 ```sh
-./run added-table
+./run added-table view-changed
 ```
 
-To run all tests:
+Run all tests:
 
 ```sh
-./run-all
+./run
 ```
 
 ## Structure
