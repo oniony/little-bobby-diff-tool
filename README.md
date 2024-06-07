@@ -8,14 +8,12 @@ Little Bobby Diff Tool is a CLI tool to compare database schemas.
 
 It currently compares the following across one or more schemas.
 
-- [X] Tables
-  - [X] Optionally ignoring column ordering differences
-  - [X] Constraints
-- [X] Views
+- [X] Constraints
 - [X] Routines
-  - [X] Optionally ignoring whitespace differences
 - [X] Sequences
+- [X] Tables
 - [X] Triggers
+- [X] Views
 
 The following are currently not compared:
 
@@ -42,6 +40,12 @@ The following are currently not compared:
 lbdt --left URL --right URL --schema SCHEMA [--schema SCHEMA ...]
 ```
 
+For help:
+
+```sh
+lbdt --help
+```
+
 ## Examples
 
 ```sh
@@ -49,7 +53,8 @@ lbdt --left postgres://user:pass@localhost:5432/postgres \
      --right postgres://user:pass@localhost:85432/postgres \
      --schema public \
      --schema other \
-     --ignore-column-ordinal
+     --ignore-column-ordinal \
+     --ignore-whitespace
 ```
 
 # Versions
