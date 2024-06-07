@@ -59,6 +59,10 @@ lbdt --left postgres://user:pass@localhost:5432/postgres \
 
 # Versions
 
+## 0.10.0
+
+* Added comparison of triggers.
+
 ## 0.9.0
 
 * Added comparison of sequences.
