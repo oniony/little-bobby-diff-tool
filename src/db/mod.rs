@@ -1,4 +1,7 @@
+pub(crate) mod thing;
+
 use postgres::{Client, NoTls, Error};
+use crate::db::thing::{Column, Routine, Schema, Sequence, Table, TableConstraint, Trigger, View};
 
 pub struct Database {
     connection: Client
@@ -18,7 +21,8 @@ impl Database {
 
         let rows = self.connection.query(r#"
 SELECT schema_name, schema_owner
-FROM information_schema.schemata;"#,
+FROM information_schema.schemata
+ORDER BY schema_name;"#,
                                             &[])?;
         
         for row in rows {
@@ -44,7 +48,8 @@ SELECT table_name,
        table_type,
        is_insertable_into
 FROM information_schema.tables
-WHERE table_schema = $1;"#,
+WHERE table_schema = $1
+ORDER BY table_name;"#,
                                          &[&schema_name])?;
 
         for row in rows {
@@ -77,7 +82,8 @@ SELECT table_name,
        is_trigger_deletable,
        is_trigger_insertable_into
 FROM information_schema.views
-WHERE table_schema = $1;"#,
+WHERE table_schema = $1
+ORDER BY table_name;"#,
                                          &[&schema_name])?;
 
         for row in rows {
@@ -128,7 +134,8 @@ SELECT r.routine_name || '(' || COALESCE((
        r.is_null_call,
        r.security_type
 FROM information_schema.routines r
-WHERE r.routine_schema = $1;"#,
+WHERE r.routine_schema = $1
+ORDER BY signature;"#,
                                          &[&schema_name])?;
 
         for row in rows {
@@ -184,7 +191,8 @@ SELECT column_name,
        is_updatable
 FROM information_schema.columns
 WHERE table_schema = $1 AND
-      table_name = $2;"#,
+      table_name = $2
+ORDER BY table_name, column_name;"#,
                                          &[&schema_name, &table_name])?;
 
         for row in rows {
@@ -226,32 +234,33 @@ WHERE table_schema = $1 AND
         Ok(columns)
     }
 
-    pub fn table_constraints(&mut self, schema_name: &str, table_name: &str) -> Result<Vec<TableConstraint>, Error> {
+    pub fn table_constraints(&mut self, schema_name: &str) -> Result<Vec<TableConstraint>, Error> {
         let mut table_constraints = Vec::new();
-
-        //NOTE CHECK constraints are currently filtered out as they have unpredictable names
 
         let rows = self.connection.query(r#"
 SELECT constraint_name,
+       table_name,
        constraint_type,
        is_deferrable,
        initially_deferred,
        nulls_distinct
 FROM information_schema.table_constraints
 WHERE table_schema = $1 AND
-      table_name = $2 AND
-      constraint_type != 'CHECK';"#,
-                                         &[&schema_name, &table_name])?;
+      constraint_type != 'CHECK'
+ORDER BY constraint_name;"#,
+                                         &[&schema_name])?;
 
         for row in rows {
             let constraint_name: String = row.get(0);
-            let constraint_type: String = row.get(1);
-            let is_deferrable: String = row.get(2);
-            let initially_deferred: String = row.get(3);
-            let nulls_distinct: Option<String> = row.get(4);
+            let table_name: String = row.get(1);
+            let constraint_type: String = row.get(2);
+            let is_deferrable: String = row.get(3);
+            let initially_deferred: String = row.get(4);
+            let nulls_distinct: Option<String> = row.get(5);
 
             let table_constraint = TableConstraint {
                 constraint_name,
+                table_name,
                 constraint_type,
                 is_deferrable,
                 initially_deferred,
@@ -263,7 +272,7 @@ WHERE table_schema = $1 AND
 
         Ok(table_constraints)
     }
-    
+
     pub fn sequences(&mut self, schema_name: &str) -> Result<Vec<Sequence>, Error> {
         let mut sequences = Vec::new();
 
@@ -279,7 +288,8 @@ SELECT sequence_name,
        increment,
        cycle_option
 FROM information_schema.sequences
-WHERE sequence_schema = $1;"#,
+WHERE sequence_schema = $1
+ORDER BY sequence_name;"#,
                                          &[&schema_name])?;
 
         for row in rows {
@@ -312,85 +322,57 @@ WHERE sequence_schema = $1;"#,
 
         Ok(sequences)
     }
-}
 
-#[derive(Clone, PartialEq)]
-pub struct Schema {
-    pub schema_name: String,
-    pub schema_owner: String,
-}
+    pub fn triggers(&mut self, schema_name: &str) -> Result<Vec<Trigger>, Error> {
+        let mut triggers = Vec::new();
 
-#[derive(Clone, PartialEq)]
-pub struct Table {
-   pub table_name: String,
-   pub table_type: String,
-   pub is_insertable_into: String,
-}
+        let rows = self.connection.query(r#"
+SELECT trigger_name,
+       event_manipulation,
+       event_object_schema,
+       event_object_table,
+       action_order,
+       action_condition,
+       action_statement,
+       action_orientation,
+       action_timing,
+       action_reference_old_table,
+       action_reference_new_table
+FROM information_schema.triggers
+WHERE trigger_schema = $1
+ORDER BY trigger_name;"#,
+                                         &[&schema_name])?;
 
-#[derive(Clone, PartialEq)]
-pub struct Column {
-    pub column_name: String,
-    pub ordinal_position: i32,
-    pub column_default: Option<String>,
-    pub is_nullable: String,
-    pub data_type: String,
-    pub character_maximum_length: Option<i32>,
-    pub numeric_precision: Option<i32>,
-    pub numeric_scale: Option<i32>,
-    pub datetime_precision: Option<i32>,
-    pub is_identity: String,
-    pub identity_generation: Option<String>,
-    pub is_generated: String,
-    pub generation_expression: Option<String>,
-    pub is_updatable: String,
-}
+        for row in rows {
+            let trigger_name: String = row.get(0);
+            let event_manipulation: String = row.get(1);
+            let event_object_schema: String = row.get(2);
+            let event_object_table: String = row.get(3);
+            let action_order: i32 = row.get(4);
+            let action_condition: Option<String> = row.get(5);
+            let action_statement: String = row.get(6);
+            let action_orientation: String = row.get(7);
+            let action_timing: String = row.get(8);
+            let action_reference_old_table: Option<String> = row.get(9);
+            let action_reference_new_table: Option<String> = row.get(10);
 
-#[derive(Clone, PartialEq)]
-pub struct View {
-    pub view_name: String,
-    pub view_definition: Option<String>,
-    pub check_option: String,
-    pub is_updatable: String,
-    pub is_insertable_into: String,
-    pub is_trigger_updatable: String,
-    pub is_trigger_deletable: String,
-    pub is_trigger_insertable_into: String,
-}
+            let sequence = Trigger {
+                trigger_name,
+                event_manipulation,
+                event_object_schema,
+                event_object_table,
+                action_order,
+                action_condition,
+                action_statement,
+                action_orientation,
+                action_timing,
+                action_reference_old_table,
+                action_reference_new_table,
+            };
 
-#[derive(Clone, PartialEq)]
-pub struct Routine {
-    pub signature: String,
-    pub routine_type: Option<String>,
-    pub data_type: Option<String>,
-    pub type_udt_name: Option<String>,
-    pub routine_body: String,
-    pub routine_definition: Option<String>,
-    pub external_name: Option<String>,
-    pub external_language: String,
-    pub is_deterministic: String,
-    pub is_null_call: Option<String>,
-    pub security_type: String,
-}
+            triggers.push(sequence);
+        }
 
-#[derive(Clone, PartialEq)]
-pub struct TableConstraint {
-    pub constraint_name: String,
-    pub constraint_type: String,
-    pub is_deferrable: String,
-    pub initially_deferred: String,
-    pub nulls_distinct: Option<String>,
-}
-
-#[derive(Clone, PartialEq)]
-pub struct Sequence {
-    pub sequence_name: String,
-    pub data_type: String,
-    pub numeric_precision: i32,
-    pub numeric_precision_radix: i32,
-    pub numeric_scale: i32,
-    pub start_value: String,
-    pub minimum_value: String,
-    pub maximum_value: String,
-    pub increment: String,
-    pub cycle_option: String,
+        Ok(triggers)
+    }
 }

@@ -36,12 +36,13 @@ pub enum ReportEntry {
 #[derive(Debug)]
 pub enum Thing {
     Column(String),
-    Constraint(String),
+    TableConstraint(String),
     Property(String),
     Routine(String),
     Schema(String),
     Sequence(String),
     Table(String),
+    Trigger(String),
     View(String),
 }
 
@@ -49,12 +50,13 @@ impl Display for Thing {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Thing::Column(name) => write!(f, "column '{}'", name),
-            Thing::Constraint(name) => write!(f, "constraint '{}'", name),
+            Thing::TableConstraint(name) => write!(f, "constraint '{}'", name),
             Thing::Property(name) => write!(f, "property '{}'", name),
             Thing::Routine(name) => write!(f, "routine '{}'", name),
             Thing::Schema(name) => write!(f, "schema '{}'", name),
             Thing::Sequence(name) => write!(f, "sequence '{}'", name),
             Thing::Table(name) => write!(f, "table '{}'", name),
+            Thing::Trigger(name) => write!(f, "trigger '{}'", name),
             Thing::View(name) => write!(f, "view '{}'", name),
         }
     }

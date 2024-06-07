@@ -15,6 +15,7 @@ It currently compares the following across one or more schemas.
 - [X] Routines
   - [X] Optionally ignoring whitespace differences
 - [X] Sequences
+- [X] Triggers
 
 The following are currently not compared:
 
@@ -24,7 +25,6 @@ The following are currently not compared:
   - [ ] Table grants
   - [ ] Routine grants
   - [ ] Table privileges
-- [ ] Triggers
 - [ ] User Defined Types
 
 # Compilation

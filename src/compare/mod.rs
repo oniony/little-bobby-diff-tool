@@ -5,7 +5,7 @@ use std::fmt::{Display};
 use postgres::Error;
 use crate::compare::report::{Report, ReportEntry, Thing};
 use crate::compare::report::ReportEntry::{Addition, Change, Match, Removal};
-use crate::compare::report::Thing::{Column, Constraint, Property, Routine, Schema, Sequence, Table, View};
+use crate::compare::report::Thing::{Column, TableConstraint, Property, Routine, Schema, Sequence, Table, Trigger, View};
 use crate::{db};
 use crate::db::{Database};
 use crate::string::{EqualIgnoreWhitespace};
@@ -29,103 +29,76 @@ impl Comparer {
 
     pub fn compare(&mut self, schema: &str) -> Result<Report, Error> {
         let mut report = Report::new();
-        
-        let mut schema_entries = self.compare_schema(schema)?;
-        report.entries.append(&mut schema_entries);
-        
-        let mut table_entries = self.compare_tables(schema)?;
-        report.entries.append(&mut table_entries);
-        
-        let mut view_entries = self.compare_views(schema)?;
-        report.entries.append(&mut view_entries);
 
-        let mut routine_entries = self.compare_routines(schema)?;
-        report.entries.append(&mut routine_entries);
-        
-        let mut sequence_entries = self.compare_sequences(schema)?;
-        report.entries.append(&mut sequence_entries);
-        
+        report.entries.append(&mut self.compare_schema(schema)?);
+        report.entries.append(&mut self.compare_constraints(schema)?);
+        report.entries.append(&mut self.compare_routines(schema)?);
+        report.entries.append(&mut self.compare_sequences(schema)?);
+        report.entries.append(&mut self.compare_tables(schema)?);
+        report.entries.append(&mut self.compare_triggers(schema)?);
+        report.entries.append(&mut self.compare_views(schema)?);
+
         Ok(report)
     }
 
-    fn compare_schema(&mut self, schema_name: &str) -> Result<Vec<ReportEntry>, Error> {
-        let left_schemas = self.left_db.schemas()?;
-        let right_schemas = self.right_db.schemas()?;
+    fn compare_columns(&mut self, schema_name: &str, table_name: &str) -> Result<Vec<ReportEntry>, Error> {
+        let left_columns = self.left_db.columns(schema_name, table_name)?;
+        let right_columns = self.right_db.columns(schema_name, table_name)?;
 
-        let left_schema = left_schemas.iter().find(|s| s.schema_name == schema_name);
-        let right_schema = right_schemas.iter().find(|s| s.schema_name == schema_name);
-        
-        let mut entries = Vec::new();
-        
-        if left_schema.is_none() {
-            entries.push(Addition { path: vec![], thing: Schema(String::from(schema_name)) });
-        }
-        if right_schema.is_none() {
-            entries.push(Removal { path: vec![], thing: Schema(String::from(schema_name)) });
-        }
-
-        entries.push(self.compare_property(vec![Schema(String::from(schema_name))], "schema_owner", &left_schema.unwrap().schema_owner, &right_schema.unwrap().schema_owner));
-        
-        Ok(entries)
-    }
-
-    fn compare_tables(&mut self, schema_name: &str) -> Result<Vec<ReportEntry>, Error> {
-        let left_tables = self.left_db.tables(schema_name)?;
-        let right_tables = self.right_db.tables(schema_name)?;
-        
-        let mut right_tables_map : HashMap<String, db::Table> = right_tables.into_iter().map(|t| (t.table_name.clone(), t)).collect();
+        let mut right_columns_map : HashMap<String, db::thing::Column> = right_columns.into_iter().map(|c| (c.column_name.clone(), c)).collect();
         let mut entries = Vec::new();
 
-        for left_table in left_tables {
-            let right_table = right_tables_map.get(&left_table.table_name);
-            
-            match right_table {
+        for mut left_column in left_columns {
+            let right_column = right_columns_map.get_mut(&left_column.column_name);
+
+            match right_column {
                 None => {
-                    entries.push(Removal { path: vec![Schema(String::from(schema_name))], thing: Table(left_table.table_name) });
+                    entries.push(Removal { path: vec![Schema(String::from(schema_name)), Table(String::from(table_name))], thing: Column(left_column.column_name) });
                 },
-                Some(rt) => {
-                    let mut table_entries = self.compare_table(schema_name, &left_table, rt)?;
-                    entries.append(&mut table_entries);
-
-                    let mut column_entries = self.compare_table_columns(schema_name, left_table.table_name.as_str())?;
+                Some(rc) => {
+                    let mut column_entries = self.compare_column(schema_name, table_name, &mut left_column, rc);
                     entries.append(&mut column_entries);
-                    
-                    let mut constraint_entries = self.compare_table_constraints(schema_name, left_table.table_name.as_str())?;
-                    entries.append(&mut constraint_entries);
-                    
-                    right_tables_map.remove(&left_table.table_name);
+
+                    right_columns_map.remove(&left_column.column_name);
                 },
             }
         }
-        
-        if right_tables_map.len() > 0 {
-            for right_table in right_tables_map.values() {
-                entries.push(Addition { path: vec![Schema(String::from(schema_name))], thing: Table(right_table.table_name.clone()) });
+
+        if right_columns_map.len() > 0 {
+            for right_column in right_columns_map.values() {
+                entries.push(Addition { path: vec![Schema(String::from(schema_name)), Table(String::from(table_name))], thing: Column(right_column.column_name.clone()) });
             }
         }
-    
+
         Ok(entries)
     }
 
-    fn compare_views(&mut self, schema_name: &str) -> Result<Vec<ReportEntry>, Error> {
-        let left_views = self.left_db.views(schema_name)?;
-        let right_views = self.right_db.views(schema_name)?;
+    fn compare_constraints(&mut self, schema_name: &str) -> Result<Vec<ReportEntry>, Error> {
+        let left_table_constraints = self.left_db.table_constraints(schema_name)?;
+        let right_table_constraints = self.right_db.table_constraints(schema_name)?;
 
-        let right_views_map: HashMap<String, db::View> = right_views.into_iter().map(|t| (t.view_name.clone(), t)).collect();
+        let mut right_table_constraints_map : HashMap<String, db::thing::TableConstraint> = right_table_constraints.into_iter().map(|t| (t.constraint_name.clone(), t)).collect();
         let mut entries = Vec::new();
 
-        for left_view in left_views {
-            let right_view = right_views_map.get(&left_view.view_name);
+        for left_table_constraint in left_table_constraints {
+            let right_table_constraint = right_table_constraints_map.get(&left_table_constraint.constraint_name);
 
-            match right_view {
+            match right_table_constraint {
                 None => {
-                    // already detected by table comparison
-                    continue
+                    entries.push(Removal { path: vec![Schema(String::from(schema_name)), Table(left_table_constraint.table_name.clone())], thing: TableConstraint(left_table_constraint.constraint_name) });
                 },
-                Some(rv) => {
-                    let mut view_entries = self.compare_view(schema_name, &left_view, rv);
-                    entries.append(&mut view_entries);
-                }
+                Some(rtc) => {
+                    let mut table_constraint_entries = self.compare_table_constraint(schema_name, &left_table_constraint, rtc);
+                    entries.append(&mut table_constraint_entries);
+
+                    right_table_constraints_map.remove(&left_table_constraint.constraint_name);
+                },
+            }
+        }
+
+        if right_table_constraints_map.len() > 0 {
+            for right_table_constraint in right_table_constraints_map.values() {
+                entries.push(Addition { path: vec![Schema(String::from(schema_name)), Table(right_table_constraint.table_name.clone())], thing: TableConstraint(right_table_constraint.constraint_name.clone()) });
             }
         }
 
@@ -136,7 +109,7 @@ impl Comparer {
         let left_routines = self.left_db.routines(schema_name)?;
         let right_routines = self.right_db.routines(schema_name)?;
 
-        let mut right_routines_map : HashMap<String, db::Routine> = right_routines.into_iter().map(|t| (t.signature.clone(), t)).collect();
+        let mut right_routines_map : HashMap<String, db::thing::Routine> = right_routines.into_iter().map(|t| (t.signature.clone(), t)).collect();
         let mut entries = Vec::new();
 
         for left_routine in left_routines {
@@ -164,16 +137,37 @@ impl Comparer {
         Ok(entries)
     }
 
+    fn compare_schema(&mut self, schema_name: &str) -> Result<Vec<ReportEntry>, Error> {
+        let left_schemas = self.left_db.schemas()?;
+        let right_schemas = self.right_db.schemas()?;
+
+        let left_schema = left_schemas.iter().find(|s| s.schema_name == schema_name);
+        let right_schema = right_schemas.iter().find(|s| s.schema_name == schema_name);
+        
+        let mut entries = Vec::new();
+        
+        if left_schema.is_none() {
+            entries.push(Addition { path: vec![], thing: Schema(String::from(schema_name)) });
+        }
+        if right_schema.is_none() {
+            entries.push(Removal { path: vec![], thing: Schema(String::from(schema_name)) });
+        }
+
+        entries.push(self.compare_property(vec![Schema(String::from(schema_name))], "schema_owner", &left_schema.unwrap().schema_owner, &right_schema.unwrap().schema_owner));
+        
+        Ok(entries)
+    }
+
     fn compare_sequences(&mut self, schema_name: &str) -> Result<Vec<ReportEntry>, Error> {
         let left_sequences = self.left_db.sequences(schema_name)?;
         let right_sequences = self.right_db.sequences(schema_name)?;
-    
-        let mut right_sequences_map : HashMap<String, db::Sequence> = right_sequences.into_iter().map(|t| (t.sequence_name.clone(), t)).collect();
+
+        let mut right_sequences_map : HashMap<String, db::thing::Sequence> = right_sequences.into_iter().map(|t| (t.sequence_name.clone(), t)).collect();
         let mut entries = Vec::new();
-    
+
         for left_sequence in left_sequences {
             let right_sequence = right_sequences_map.get(&left_sequence.sequence_name);
-    
+
             match right_sequence {
                 None => {
                     entries.push(Removal { path: vec![Schema(String::from(schema_name))], thing: Sequence(left_sequence.sequence_name) });
@@ -186,56 +180,145 @@ impl Comparer {
                 }
             }
         }
-    
+
         if right_sequences_map.len() > 0 {
             for right_sequence in right_sequences_map.values() {
                 entries.push(Addition { path: vec![Schema(String::from(schema_name))], thing: Sequence(right_sequence.sequence_name.clone()) });
             }
         }
-        
-        Ok(entries)
-    }
-    
-    fn compare_table(&mut self, schema_name: &str, left: &db::Table, right: &db::Table) -> Result<Vec<ReportEntry>, Error> {
-        let mut entries = Vec::new();
-        
-        //TODO work out how to better clone the path
-        let path = || vec![Schema(String::from(schema_name)), Table(left.table_name.clone())];
-        
-        entries.push(self.compare_property(path(), "table_type", &left.table_type, &right.table_type));
-        entries.push(self.compare_property(path(), "is_insertable_into", &left.is_insertable_into, &right.is_insertable_into));
-        
+
         Ok(entries)
     }
 
-    fn compare_view(&mut self, schema_name: &str, left: &db::View, right: &db::View) -> Vec<ReportEntry> {
+    fn compare_tables(&mut self, schema_name: &str) -> Result<Vec<ReportEntry>, Error> {
+        let left_tables = self.left_db.tables(schema_name)?;
+        let right_tables = self.right_db.tables(schema_name)?;
+        
+        let mut right_tables_map : HashMap<String, db::thing::Table> = right_tables.into_iter().map(|t| (t.table_name.clone(), t)).collect();
+        let mut entries = Vec::new();
+
+        for left_table in left_tables {
+            let right_table = right_tables_map.get(&left_table.table_name);
+            
+            match right_table {
+                None => {
+                    entries.push(Removal { path: vec![Schema(String::from(schema_name))], thing: Table(left_table.table_name) });
+                },
+                Some(rt) => {
+                    let mut table_entries = self.compare_table(schema_name, &left_table, rt)?;
+                    entries.append(&mut table_entries);
+
+                    let mut column_entries = self.compare_columns(schema_name, left_table.table_name.as_str())?;
+                    entries.append(&mut column_entries);
+                    
+                    right_tables_map.remove(&left_table.table_name);
+                },
+            }
+        }
+        
+        if right_tables_map.len() > 0 {
+            for right_table in right_tables_map.values() {
+                entries.push(Addition { path: vec![Schema(String::from(schema_name))], thing: Table(right_table.table_name.clone()) });
+            }
+        }
+    
+        Ok(entries)
+    }
+
+    fn compare_triggers(&mut self, schema_name: &str) -> Result<Vec<ReportEntry>, Error> {
+        let left_triggers = self.left_db.triggers(schema_name)?;
+        let right_triggers = self.right_db.triggers(schema_name)?;
+
+        let mut right_triggers_map : HashMap<String, db::thing::Trigger> = right_triggers.into_iter().map(|t| (t.trigger_name.clone(), t)).collect();
+        let mut entries = Vec::new();
+
+        for left_trigger in left_triggers {
+            let right_trigger = right_triggers_map.get(&left_trigger.trigger_name);
+
+            match right_trigger {
+                None => {
+                    entries.push(Removal { path: vec![Schema(String::from(schema_name)), Table(left_trigger.event_object_table.clone())], thing: Trigger(left_trigger.trigger_name) });
+                },
+                Some(rt) => {
+                    let mut trigger_entries = self.compare_trigger(schema_name, &left_trigger, rt);
+                    entries.append(&mut trigger_entries);
+
+                    right_triggers_map.remove(&left_trigger.trigger_name);
+                },
+            }
+        }
+
+        if right_triggers_map.len() > 0 {
+            for right_trigger in right_triggers_map.values() {
+                entries.push(Addition { path: vec![Schema(String::from(schema_name)), Table(right_trigger.event_object_table.clone())], thing: Trigger(right_trigger.trigger_name.clone()) });
+            }
+        }
+
+        Ok(entries)
+    }
+
+    fn compare_views(&mut self, schema_name: &str) -> Result<Vec<ReportEntry>, Error> {
+        let left_views = self.left_db.views(schema_name)?;
+        let right_views = self.right_db.views(schema_name)?;
+
+        let right_views_map: HashMap<String, db::thing::View> = right_views.into_iter().map(|t| (t.view_name.clone(), t)).collect();
+        let mut entries = Vec::new();
+
+        for left_view in left_views {
+            let right_view = right_views_map.get(&left_view.view_name);
+
+            match right_view {
+                None => {
+                    // already detected by table comparison
+                    continue
+                },
+                Some(rv) => {
+                    let mut view_entries = self.compare_view(schema_name, &left_view, rv);
+                    entries.append(&mut view_entries);
+                }
+            }
+        }
+
+        Ok(entries)
+    }
+
+    fn compare_column(&mut self, schema_name: &str, table_name: &str, left: &mut db::thing::Column, right: &mut db::thing::Column) -> Vec<ReportEntry> {
         let mut entries = Vec::new();
 
         //TODO work out how to better clone this
-        let path = || vec![Schema(String::from(schema_name)), View(left.view_name.clone())];
-        
-        entries.push(self.compare_option_property(path(), "view_definition", &left.view_definition, &right.view_definition));
-        entries.push(self.compare_property(path(), "check_option", &left.check_option, &right.check_option));
+        let path = || vec![Schema(String::from(schema_name)), Table(String::from(table_name)), Column(left.column_name.clone())];
+
+        if !self.ignore_column_ordinal {
+            entries.push(self.compare_property(path(), "ordinal_position", &left.ordinal_position, &right.ordinal_position));
+        }
+
+        entries.push(self.compare_option_property(path(), "column_default", &left.column_default, &right.column_default));
+        entries.push(self.compare_property(path(), "is_nullable", &left.is_nullable, &right.is_nullable));
+        entries.push(self.compare_property(path(), "data_type", &left.data_type, &right.data_type));
+        entries.push(self.compare_option_property(path(), "character_maximum_length", &left.character_maximum_length, &right.character_maximum_length));
+        entries.push(self.compare_option_property(path(), "numeric_precision", &left.numeric_precision, &right.numeric_precision));
+        entries.push(self.compare_option_property(path(), "numeric_scale", &left.numeric_scale, &right.numeric_scale));
+        entries.push(self.compare_option_property(path(), "datetime_precision", &left.datetime_precision, &right.datetime_precision));
+        entries.push(self.compare_property(path(), "is_identity", &left.is_identity, &right.is_identity));
+        entries.push(self.compare_option_property(path(), "identity_generation", &left.identity_generation, &right.identity_generation));
+        entries.push(self.compare_property(path(), "is_generated", &left.is_generated, &right.is_generated));
+        entries.push(self.compare_option_property(path(), "generation_expression", &left.generation_expression, &right.generation_expression));
         entries.push(self.compare_property(path(), "is_updatable", &left.is_updatable, &right.is_updatable));
-        entries.push(self.compare_property(path(), "is_insertable_into", &left.is_insertable_into, &right.is_insertable_into));
-        entries.push(self.compare_property(path(), "is_trigger_updatable", &left.is_trigger_updatable, &right.is_trigger_updatable));
-        entries.push(self.compare_property(path(), "is_trigger_deletable", &left.is_trigger_deletable, &right.is_trigger_deletable));
-        entries.push(self.compare_property(path(), "is_trigger_insertable_into", &left.is_trigger_insertable_into, &right.is_trigger_insertable_into));
-    
+
         entries
     }
 
-    fn compare_routine(&mut self, schema_name: &str, left: &db::Routine, right: &db::Routine) -> Vec<ReportEntry> {
+    fn compare_routine(&mut self, schema_name: &str, left: &db::thing::Routine, right: &db::thing::Routine) -> Vec<ReportEntry> {
         let mut entries = Vec::new();
 
         //TODO work out how to better clone this
         let path = || vec![Schema(String::from(schema_name)), Routine(left.signature.clone())];
-        
+
         entries.push(self.compare_option_property(path(), "routine_type", &left.routine_type, &right.routine_type));
         entries.push(self.compare_option_property(path(), "data_type", &left.data_type, &right.data_type));
         entries.push(self.compare_option_property(path(), "type_udt_name", &left.type_udt_name, &right.type_udt_name));
         entries.push(self.compare_property(path(), "routine_body", &left.routine_body, &right.routine_body));
-        
+
         entries.push(
             if self.ignore_whitespace {
                 self.compare_option_property_ignore_whitespace(path(), "routine_definition", &left.routine_definition, &right.routine_definition)
@@ -243,17 +326,17 @@ impl Comparer {
                 self.compare_option_property(path(), "routine_definition", &left.routine_definition, &right.routine_definition)
             }
         );
-        
+
         entries.push(self.compare_option_property(path(), "external_name", &left.external_name, &right.external_name));
         entries.push(self.compare_property(path(), "external_language", &left.external_language, &right.external_language));
         entries.push(self.compare_property(path(), "is_deterministic", &left.is_deterministic, &right.is_deterministic));
         entries.push(self.compare_option_property(path(), "is_null_call", &left.is_null_call, &right.is_null_call));
         entries.push(self.compare_property(path(), "security_type", &left.security_type, &right.security_type));
-        
+
         entries
     }
 
-    fn compare_sequence(&mut self, schema_name: &str, left: &db::Sequence, right: &db::Sequence) -> Vec<ReportEntry> {
+    fn compare_sequence(&mut self, schema_name: &str, left: &db::thing::Sequence, right: &db::thing::Sequence) -> Vec<ReportEntry> {
         let mut entries = Vec::new();
 
         //TODO work out how to better clone this
@@ -272,107 +355,66 @@ impl Comparer {
         entries
     }
 
-    fn compare_table_columns(&mut self, schema_name: &str, table_name: &str) -> Result<Vec<ReportEntry>, Error> {
-        let left_columns = self.left_db.columns(schema_name, table_name)?;
-        let right_columns = self.right_db.columns(schema_name, table_name)?;
-        
-        let mut right_columns_map : HashMap<String, db::Column> = right_columns.into_iter().map(|c| (c.column_name.clone(), c)).collect();
+    fn compare_table(&mut self, schema_name: &str, left: &db::thing::Table, right: &db::thing::Table) -> Result<Vec<ReportEntry>, Error> {
         let mut entries = Vec::new();
-        
-        for mut left_column in left_columns {
-            let right_column = right_columns_map.get_mut(&left_column.column_name);
-            
-            match right_column {
-                None => {
-                    entries.push(Removal { path: vec![Schema(String::from(schema_name)), Table(String::from(table_name))], thing: Column(left_column.column_name) });
-                },
-                Some(rc) => {
-                    let mut column_entries = self.compare_table_column(schema_name, table_name, &mut left_column, rc);
-                    entries.append(&mut column_entries);
 
-                    right_columns_map.remove(&left_column.column_name);
-                },
-            }
-        }
-    
-        if right_columns_map.len() > 0 {
-            for right_column in right_columns_map.values() {
-                entries.push(Addition { path: vec![Schema(String::from(schema_name)), Table(String::from(table_name))], thing: Column(right_column.column_name.clone()) });
-            }
-        }
-    
+        //TODO work out how to better clone the path
+        let path = || vec![Schema(String::from(schema_name)), Table(left.table_name.clone())];
+
+        entries.push(self.compare_property(path(), "table_type", &left.table_type, &right.table_type));
+        entries.push(self.compare_property(path(), "is_insertable_into", &left.is_insertable_into, &right.is_insertable_into));
+
         Ok(entries)
     }
 
-    fn compare_table_constraints(&mut self, schema_name: &str, table_name: &str) -> Result<Vec<ReportEntry>, Error> {
-        let left_constraints = self.left_db.table_constraints(schema_name, table_name)?;
-        let right_constraints = self.right_db.table_constraints(schema_name, table_name)?;
-    
-        let mut right_constraint_map : HashMap<String, db::TableConstraint> = right_constraints.into_iter().map(|c| (c.constraint_name.clone(), c)).collect();
-        let mut entries = Vec::new();
-        
-        for mut left_constraint in left_constraints {
-            let right_constraint = right_constraint_map.get_mut(&left_constraint.constraint_name);
-    
-            match right_constraint {
-                None => {
-                    entries.push(Removal { path: vec![Schema(String::from(schema_name)), Table(String::from(table_name))], thing: Constraint(left_constraint.constraint_name) });
-                },
-                Some(rc) => {
-                    let mut constraint_entries = self.compare_table_constraint(schema_name, table_name, &mut left_constraint, rc);
-                    entries.append(&mut constraint_entries);
-
-                    right_constraint_map.remove(&left_constraint.constraint_name);
-                },
-            }
-        }
-    
-        if right_constraint_map.len() > 0 {
-            for right_constraint in right_constraint_map.values() {
-                entries.push(Addition { path: vec![Schema(String::from(schema_name)), Table(String::from(table_name))], thing: Constraint(right_constraint.constraint_name.clone()) });
-            }
-        }
-    
-        Ok(entries)
-    }
-    
-    fn compare_table_column(&mut self, schema_name: &str, table_name: &str, left: &mut db::Column, right: &mut db::Column) -> Vec<ReportEntry> {
+    fn compare_table_constraint(&mut self, schema_name: &str, left: &db::thing::TableConstraint, right: &db::thing::TableConstraint) -> Vec<ReportEntry> {
         let mut entries = Vec::new();
 
         //TODO work out how to better clone this
-        let path = || vec![Schema(String::from(schema_name)), Table(String::from(table_name)), Column(left.column_name.clone())];
-        
-        if !self.ignore_column_ordinal {
-            entries.push(self.compare_property(path(), "ordinal_position", &left.ordinal_position, &right.ordinal_position));
-        }
-        
-        entries.push(self.compare_option_property(path(), "column_default", &left.column_default, &right.column_default));
-        entries.push(self.compare_property(path(), "is_nullable", &left.is_nullable, &right.is_nullable));
-        entries.push(self.compare_property(path(), "data_type", &left.data_type, &right.data_type));
-        entries.push(self.compare_option_property(path(), "character_maximum_length", &left.character_maximum_length, &right.character_maximum_length));
-        entries.push(self.compare_option_property(path(), "numeric_precision", &left.numeric_precision, &right.numeric_precision));
-        entries.push(self.compare_option_property(path(), "numeric_scale", &left.numeric_scale, &right.numeric_scale));
-        entries.push(self.compare_option_property(path(), "datetime_precision", &left.datetime_precision, &right.datetime_precision));
-        entries.push(self.compare_property(path(), "is_identity", &left.is_identity, &right.is_identity));
-        entries.push(self.compare_option_property(path(), "identity_generation", &left.identity_generation, &right.identity_generation));
-        entries.push(self.compare_property(path(), "is_generated", &left.is_generated, &right.is_generated));
-        entries.push(self.compare_option_property(path(), "generation_expression", &left.generation_expression, &right.generation_expression));
-        entries.push(self.compare_property(path(), "is_updatable", &left.is_updatable, &right.is_updatable));
-        
-        entries
-    }
-
-    fn compare_table_constraint(&mut self, schema_name: &str, table_name: &str, left: &mut db::TableConstraint, right: &mut db::TableConstraint) -> Vec<ReportEntry> {
-        let mut entries = Vec::new();
-
-        //TODO work out how to better clone this
-        let path = || vec![Schema(String::from(schema_name)), Table(String::from(table_name)), Constraint(left.constraint_name.clone())];
+        let path = || vec![Schema(String::from(schema_name)), Table(left.table_name.clone()), TableConstraint(left.constraint_name.clone())];
 
         entries.push(self.compare_property(path(), "constraint_type", &left.constraint_type, &right.constraint_type));
         entries.push(self.compare_property(path(), "is_deferrable", &left.is_deferrable, &right.is_deferrable));
         entries.push(self.compare_property(path(), "initially_deferred", &left.initially_deferred, &right.initially_deferred));
         entries.push(self.compare_option_property(path(), "nulls_distinct", &left.nulls_distinct, &right.nulls_distinct));
-    
+
+        entries
+    }
+
+    fn compare_trigger(&mut self, schema_name: &str, left: &db::thing::Trigger, right: &db::thing::Trigger) -> Vec<ReportEntry> {
+        let mut entries = Vec::new();
+
+        //TODO work out how to better clone this
+        let path = || vec![Schema(String::from(schema_name)), Table(left.event_object_table.clone()), Trigger(left.trigger_name.clone())];
+
+        entries.push(self.compare_property(path(), "event_manipulation", &left.event_manipulation, &right.event_manipulation));
+        entries.push(self.compare_property(path(), "event_object_schema", &left.event_object_schema, &right.event_object_schema));
+        entries.push(self.compare_property(path(), "event_object_table", &left.event_object_table, &right.event_object_table));
+        entries.push(self.compare_property(path(), "action_order", &left.action_order, &right.action_order));
+        entries.push(self.compare_option_property(path(), "action_condition", &left.action_condition, &right.action_condition));
+        entries.push(self.compare_property(path(), "action_statement", &left.action_statement, &right.action_statement));
+        entries.push(self.compare_property(path(), "action_orientation", &left.action_orientation, &right.action_orientation));
+        entries.push(self.compare_property(path(), "action_timing", &left.action_timing, &right.action_timing));
+        entries.push(self.compare_option_property(path(), "action_reference_old_table", &left.action_reference_old_table, &right.action_reference_old_table));
+        entries.push(self.compare_option_property(path(), "action_reference_new_table", &left.action_reference_new_table, &right.action_reference_new_table));
+
+        entries
+    }
+
+    fn compare_view(&mut self, schema_name: &str, left: &db::thing::View, right: &db::thing::View) -> Vec<ReportEntry> {
+        let mut entries = Vec::new();
+
+        //TODO work out how to better clone this
+        let path = || vec![Schema(String::from(schema_name)), View(left.view_name.clone())];
+
+        entries.push(self.compare_option_property(path(), "view_definition", &left.view_definition, &right.view_definition));
+        entries.push(self.compare_property(path(), "check_option", &left.check_option, &right.check_option));
+        entries.push(self.compare_property(path(), "is_updatable", &left.is_updatable, &right.is_updatable));
+        entries.push(self.compare_property(path(), "is_insertable_into", &left.is_insertable_into, &right.is_insertable_into));
+        entries.push(self.compare_property(path(), "is_trigger_updatable", &left.is_trigger_updatable, &right.is_trigger_updatable));
+        entries.push(self.compare_property(path(), "is_trigger_deletable", &left.is_trigger_deletable, &right.is_trigger_deletable));
+        entries.push(self.compare_property(path(), "is_trigger_insertable_into", &left.is_trigger_insertable_into, &right.is_trigger_insertable_into));
+
         entries
     }
 
