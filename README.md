@@ -56,6 +56,10 @@ lbdt --left postgres://user:pass@localhost:5432/postgres \
 
 # Versions
 
+## 0.12.0
+
+* Added `--ignore-privileges` option to skip privilege comparison.
+
 ## 0.11.0
 
 * Added comparison of privileges.

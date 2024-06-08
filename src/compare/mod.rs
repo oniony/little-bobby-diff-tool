@@ -15,15 +15,17 @@ pub struct Comparer {
     right_db: Database,
     ignore_whitespace: bool,
     ignore_column_ordinal: bool,
+    ignore_privileges: bool,
 }
 
 impl Comparer {
-    pub fn new(left_db: Database, right_db: Database, ignore_whitespace: bool, ignore_column_ordinal: bool) -> Comparer {
+    pub fn new(left_db: Database, right_db: Database, ignore_whitespace: bool, ignore_column_ordinal: bool, ignore_privileges: bool) -> Comparer {
         Comparer{
             left_db,
             right_db,
             ignore_whitespace,
             ignore_column_ordinal,
+            ignore_privileges,
         }
     }
 
@@ -32,13 +34,13 @@ impl Comparer {
 
         report.entries.append(&mut self.compare_schema(schema)?);
         report.entries.append(&mut self.compare_columns(schema)?);
-        report.entries.append(&mut self.compare_column_privileges(schema)?);
+        if !self.ignore_privileges { report.entries.append(&mut self.compare_column_privileges(schema)?); }
         report.entries.append(&mut self.compare_table_constraints(schema)?);
         report.entries.append(&mut self.compare_routines(schema)?);
-        report.entries.append(&mut self.compare_routine_privileges(schema)?);
+        if !self.ignore_privileges { report.entries.append(&mut self.compare_routine_privileges(schema)?); }
         report.entries.append(&mut self.compare_sequences(schema)?);
         report.entries.append(&mut self.compare_tables(schema)?);
-        report.entries.append(&mut self.compare_table_privileges(schema)?);
+        if !self.ignore_privileges { report.entries.append(&mut self.compare_table_privileges(schema)?); }
         report.entries.append(&mut self.compare_triggers(schema)?);
         report.entries.append(&mut self.compare_views(schema)?);
 

@@ -15,7 +15,12 @@ impl CLI {
         let left_db = db::Database::connect(args.left.as_str())?;
         let right_db = db::Database::connect(args.right.as_str())?;
 
-        let mut comparer = compare::Comparer::new(left_db, right_db, args.ignore_whitespace, args.ignore_column_ordinal);
+        let mut comparer = compare::Comparer::new(
+            left_db,
+            right_db,
+            args.ignore_whitespace,
+            args.ignore_column_ordinal,
+            args.ignore_privileges);
         
         let mut differences = false;
         
@@ -89,4 +94,7 @@ pub struct Args {
     
     #[arg(short, long, short = 'o', help = "Ignore column ordering differences")]
     ignore_column_ordinal: bool,
+    
+    #[arg(short, long, short = 'p', help = "Ignore privilege changes")]
+    ignore_privileges: bool
 }
