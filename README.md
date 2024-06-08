@@ -59,6 +59,10 @@ lbdt --left postgres://user:pass@localhost:5432/postgres \
 
 # Versions
 
+## 0.11.0
+
+* Added comparison of privileges.
+
 ## 0.10.0
 
 * Added comparison of triggers.
