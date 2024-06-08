@@ -36,12 +36,15 @@ pub enum ReportEntry {
 #[derive(Debug)]
 pub enum Thing {
     Column(String),
+    ColumnPrivilege(String, String),
     TableConstraint(String),
     Property(String),
     Routine(String),
+    RoutinePrivilege(String, String),
     Schema(String),
     Sequence(String),
     Table(String),
+    TablePrivilege(String, String),
     Trigger(String),
     View(String),
 }
@@ -49,13 +52,16 @@ pub enum Thing {
 impl Display for Thing {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Thing::Column(name) => write!(f, "column '{}'", name),
-            Thing::TableConstraint(name) => write!(f, "constraint '{}'", name),
+            Thing::Column(column) => write!(f, "column '{}'", column),
+            Thing::ColumnPrivilege(grantor, grantee) => write!(f, "privilege '{}' -> '{}'", grantor, grantee),
             Thing::Property(name) => write!(f, "property '{}'", name),
             Thing::Routine(name) => write!(f, "routine '{}'", name),
+            Thing::RoutinePrivilege(grantor, grantee) => write!(f, "privilege '{}' -> '{}'", grantor, grantee),
             Thing::Schema(name) => write!(f, "schema '{}'", name),
             Thing::Sequence(name) => write!(f, "sequence '{}'", name),
             Thing::Table(name) => write!(f, "table '{}'", name),
+            Thing::TableConstraint(name) => write!(f, "constraint '{}'", name),
+            Thing::TablePrivilege(grantor, grantee) => write!(f, "privilege '{}' -> '{}'", grantor, grantee),
             Thing::Trigger(name) => write!(f, "trigger '{}'", name),
             Thing::View(name) => write!(f, "view '{}'", name),
         }

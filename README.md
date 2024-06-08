@@ -8,22 +8,22 @@ Little Bobby Diff Tool is a CLI tool to compare database schemas.
 
 It currently compares the following across one or more schemas.
 
-- [X] Constraints
+- [X] Columns
+- [X] Column Privileges
 - [X] Routines
+- [X] Routine Privileges
 - [X] Sequences
 - [X] Tables
+- [X] Table Constraints
+- [X] Table Privileges
 - [X] Triggers
 - [X] Views
 
 The following are currently not compared:
 
-- [ ] Permissions
-  - [ ] Roles
-  - [ ] Column grants
-  - [ ] Table grants
-  - [ ] Routine grants
-  - [ ] Table privileges
+- [ ] Usage Privileges
 - [ ] User Defined Types
+- [X] User Define Type Privileges
 
 # Compilation
 

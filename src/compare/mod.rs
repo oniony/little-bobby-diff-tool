@@ -5,7 +5,7 @@ use std::fmt::{Display};
 use postgres::Error;
 use crate::compare::report::{Report, ReportEntry, Thing};
 use crate::compare::report::ReportEntry::{Addition, Change, Match, Removal};
-use crate::compare::report::Thing::{Column, TableConstraint, Property, Routine, Schema, Sequence, Table, Trigger, View};
+use crate::compare::report::Thing::{Column, TableConstraint, Property, Routine, Schema, Sequence, Table, Trigger, View, ColumnPrivilege, TablePrivilege, RoutinePrivilege};
 use crate::{db};
 use crate::db::{Database};
 use crate::string::{EqualIgnoreWhitespace};
@@ -31,74 +31,75 @@ impl Comparer {
         let mut report = Report::new();
 
         report.entries.append(&mut self.compare_schema(schema)?);
-        report.entries.append(&mut self.compare_constraints(schema)?);
+        report.entries.append(&mut self.compare_columns(schema)?);
+        report.entries.append(&mut self.compare_column_privileges(schema)?);
+        report.entries.append(&mut self.compare_table_constraints(schema)?);
         report.entries.append(&mut self.compare_routines(schema)?);
+        report.entries.append(&mut self.compare_routine_privileges(schema)?);
         report.entries.append(&mut self.compare_sequences(schema)?);
         report.entries.append(&mut self.compare_tables(schema)?);
+        report.entries.append(&mut self.compare_table_privileges(schema)?);
         report.entries.append(&mut self.compare_triggers(schema)?);
         report.entries.append(&mut self.compare_views(schema)?);
 
         Ok(report)
     }
 
-    fn compare_columns(&mut self, schema_name: &str, table_name: &str) -> Result<Vec<ReportEntry>, Error> {
-        let left_columns = self.left_db.columns(schema_name, table_name)?;
-        let right_columns = self.right_db.columns(schema_name, table_name)?;
+    fn compare_columns(&mut self, schema_name: &str) -> Result<Vec<ReportEntry>, Error> {
+        let left_columns = self.left_db.columns(schema_name)?;
+        let right_columns = self.right_db.columns(schema_name)?;
 
-        let mut right_columns_map : HashMap<String, db::thing::Column> = right_columns.into_iter().map(|c| (c.column_name.clone(), c)).collect();
+        let mut right_columns_map : HashMap<(String, String), db::thing::Column> = right_columns.into_iter().map(|c| ((c.table_name.clone(), c.column_name.clone()), c)).collect();
         let mut entries = Vec::new();
 
         for mut left_column in left_columns {
-            let right_column = right_columns_map.get_mut(&left_column.column_name);
+            let right_column = right_columns_map.get_mut(&(left_column.table_name.clone(), left_column.column_name.clone()));
 
             match right_column {
                 None => {
-                    entries.push(Removal { path: vec![Schema(String::from(schema_name)), Table(String::from(table_name))], thing: Column(left_column.column_name) });
+                    entries.push(Removal { path: vec![Schema(String::from(schema_name)), Table(String::from(&left_column.table_name.clone()))], thing: Column(left_column.column_name.clone()) });
                 },
                 Some(rc) => {
-                    let mut column_entries = self.compare_column(schema_name, table_name, &mut left_column, rc);
-                    entries.append(&mut column_entries);
-
-                    right_columns_map.remove(&left_column.column_name);
+                    entries.append(&mut self.compare_column(schema_name, &left_column.table_name.clone(), &mut left_column, rc));
+                    right_columns_map.remove(&(left_column.table_name.clone(), left_column.column_name.clone()));
                 },
             }
         }
 
         if right_columns_map.len() > 0 {
-            for right_column in right_columns_map.values() {
-                entries.push(Addition { path: vec![Schema(String::from(schema_name)), Table(String::from(table_name))], thing: Column(right_column.column_name.clone()) });
+            let mut added_columns : Vec<&db::thing::Column> = right_columns_map.values().collect();
+            added_columns.sort_unstable_by_key(|c| (&c.table_name, &c.column_name));
+            
+            for right_column in added_columns {
+                entries.push(Addition { path: vec![Schema(String::from(schema_name)), Table(right_column.table_name.clone())], thing: Column(right_column.column_name.clone()) });
             }
         }
 
         Ok(entries)
     }
+    
+    fn compare_column_privileges(&mut self, schema_name: &str) -> Result<Vec<ReportEntry>, Error> {
+        let left_column_privileges = self.left_db.column_privileges(schema_name)?;
+        let right_column_privileges = self.right_db.column_privileges(schema_name)?;
 
-    fn compare_constraints(&mut self, schema_name: &str) -> Result<Vec<ReportEntry>, Error> {
-        let left_table_constraints = self.left_db.table_constraints(schema_name)?;
-        let right_table_constraints = self.right_db.table_constraints(schema_name)?;
-
-        let mut right_table_constraints_map : HashMap<String, db::thing::TableConstraint> = right_table_constraints.into_iter().map(|t| (t.constraint_name.clone(), t)).collect();
+        let mut right_column_privileges_map : HashMap<(String, String, String, String), db::thing::ColumnPrivilege> = right_column_privileges.into_iter().map(|c| ((c.table_name.clone(), c.column_name.clone(), c.grantor.clone(), c.grantee.clone()), c)).collect();
         let mut entries = Vec::new();
 
-        for left_table_constraint in left_table_constraints {
-            let right_table_constraint = right_table_constraints_map.get(&left_table_constraint.constraint_name);
+        for left_column_privilege in left_column_privileges {
+            let right_column_privilege = right_column_privileges_map.get_mut(&(left_column_privilege.table_name.clone(), left_column_privilege.column_name.clone(), left_column_privilege.grantor.clone(), left_column_privilege.grantee.clone()));
 
-            match right_table_constraint {
-                None => {
-                    entries.push(Removal { path: vec![Schema(String::from(schema_name)), Table(left_table_constraint.table_name.clone())], thing: TableConstraint(left_table_constraint.constraint_name) });
-                },
-                Some(rtc) => {
-                    let mut table_constraint_entries = self.compare_table_constraint(schema_name, &left_table_constraint, rtc);
-                    entries.append(&mut table_constraint_entries);
-
-                    right_table_constraints_map.remove(&left_table_constraint.constraint_name);
-                },
+            match right_column_privilege {
+                None => entries.push(Removal { path: vec![Schema(String::from(schema_name)), Table(String::from(left_column_privilege.table_name.clone())), Column(String::from(left_column_privilege.column_name.clone()))], thing: ColumnPrivilege(left_column_privilege.grantor.clone(), left_column_privilege.grantee.clone()) }),
+                Some(..) => _ = right_column_privileges_map.remove(&(left_column_privilege.table_name, left_column_privilege.column_name.clone(), left_column_privilege.grantor.clone(), left_column_privilege.grantee.clone())),
             }
         }
 
-        if right_table_constraints_map.len() > 0 {
-            for right_table_constraint in right_table_constraints_map.values() {
-                entries.push(Addition { path: vec![Schema(String::from(schema_name)), Table(right_table_constraint.table_name.clone())], thing: TableConstraint(right_table_constraint.constraint_name.clone()) });
+        if right_column_privileges_map.len() > 0 {
+            let mut added_column_privileges : Vec<&db::thing::ColumnPrivilege> = right_column_privileges_map.values().collect();
+            added_column_privileges.sort_unstable_by_key(|cp| (&cp.table_name, &cp.column_name, &cp.grantor, &cp.grantee));
+            
+            for right_column_privilege in added_column_privileges {
+                entries.push(Addition { path: vec![Schema(String::from(schema_name)), Table(right_column_privilege.table_name.clone()), Column(right_column_privilege.column_name.clone())], thing: ColumnPrivilege(right_column_privilege.grantor.clone(), right_column_privilege.grantee.clone()) });
             }
         }
 
@@ -129,8 +130,39 @@ impl Comparer {
         }
 
         if right_routines_map.len() > 0 {
-            for right_routine in right_routines_map.values() {
+            let mut added_routines : Vec<&db::thing::Routine> = right_routines_map.values().collect();
+            added_routines.sort_unstable_by_key(|r| &r.signature);
+            
+            for right_routine in added_routines {
                 entries.push(Addition { path: vec![Schema(String::from(schema_name))], thing: Routine(right_routine.signature.clone()) });
+            }
+        }
+
+        Ok(entries)
+    }
+
+    fn compare_routine_privileges(&mut self, schema_name: &str) -> Result<Vec<ReportEntry>, Error> {
+        let left_routine_privileges = self.left_db.routine_privileges(schema_name)?;
+        let right_routine_privileges = self.right_db.routine_privileges(schema_name)?;
+
+        let mut right_routine_privileges_map : HashMap<(String, String, String), db::thing::RoutinePrivilege> = right_routine_privileges.into_iter().map(|c| ((c.signature.clone(), c.grantor.clone(), c.grantee.clone()), c)).collect();
+        let mut entries = Vec::new();
+
+        for left_routine_privilege in left_routine_privileges {
+            let right_routine_privilege = right_routine_privileges_map.get_mut(&(left_routine_privilege.signature.clone(), left_routine_privilege.grantor.clone(), left_routine_privilege.grantee.clone()));
+
+            match right_routine_privilege {
+                None => entries.push(Removal { path: vec![Schema(String::from(schema_name)), Routine(String::from(left_routine_privilege.signature.clone()))], thing: RoutinePrivilege(left_routine_privilege.grantor.clone(), left_routine_privilege.grantee.clone()) }),
+                Some(..) => _ = right_routine_privileges_map.remove(&(left_routine_privilege.signature, left_routine_privilege.grantor.clone(), left_routine_privilege.grantee.clone())),
+            }
+        }
+
+        if right_routine_privileges_map.len() > 0 {
+            let mut added_routine_privileges : Vec<&db::thing::RoutinePrivilege> = right_routine_privileges_map.values().collect();
+            added_routine_privileges.sort_unstable_by_key(|rp| (&rp.signature, &rp.grantor, &rp.grantee));
+
+            for right_routine_privilege in added_routine_privileges {
+                entries.push(Addition { path: vec![Schema(String::from(schema_name)), Routine(right_routine_privilege.signature.clone())], thing: RoutinePrivilege(right_routine_privilege.grantor.clone(), right_routine_privilege.grantee.clone()) });
             }
         }
 
@@ -182,7 +214,10 @@ impl Comparer {
         }
 
         if right_sequences_map.len() > 0 {
-            for right_sequence in right_sequences_map.values() {
+            let mut added_sequences : Vec<&db::thing::Sequence> = right_sequences_map.values().collect();
+            added_sequences.sort_unstable_by_key(|s| &s.sequence_name);
+
+            for right_sequence in added_sequences {
                 entries.push(Addition { path: vec![Schema(String::from(schema_name))], thing: Sequence(right_sequence.sequence_name.clone()) });
             }
         }
@@ -208,20 +243,83 @@ impl Comparer {
                     let mut table_entries = self.compare_table(schema_name, &left_table, rt)?;
                     entries.append(&mut table_entries);
 
-                    let mut column_entries = self.compare_columns(schema_name, left_table.table_name.as_str())?;
-                    entries.append(&mut column_entries);
-                    
                     right_tables_map.remove(&left_table.table_name);
                 },
             }
         }
         
         if right_tables_map.len() > 0 {
-            for right_table in right_tables_map.values() {
+            let mut added_tables : Vec<&db::thing::Table> = right_tables_map.values().collect();
+            added_tables.sort_unstable_by_key(|t| &t.table_name);
+            
+            for right_table in added_tables {
                 entries.push(Addition { path: vec![Schema(String::from(schema_name))], thing: Table(right_table.table_name.clone()) });
             }
         }
     
+        Ok(entries)
+    }
+
+    fn compare_table_constraints(&mut self, schema_name: &str) -> Result<Vec<ReportEntry>, Error> {
+        let left_table_constraints = self.left_db.table_constraints(schema_name)?;
+        let right_table_constraints = self.right_db.table_constraints(schema_name)?;
+
+        let mut right_table_constraints_map : HashMap<String, db::thing::TableConstraint> = right_table_constraints.into_iter().map(|t| (t.constraint_name.clone(), t)).collect();
+        let mut entries = Vec::new();
+
+        for left_table_constraint in left_table_constraints {
+            let right_table_constraint = right_table_constraints_map.get(&left_table_constraint.constraint_name);
+
+            match right_table_constraint {
+                None => {
+                    entries.push(Removal { path: vec![Schema(String::from(schema_name)), Table(left_table_constraint.table_name.clone())], thing: TableConstraint(left_table_constraint.constraint_name) });
+                },
+                Some(rtc) => {
+                    let mut table_constraint_entries = self.compare_table_constraint(schema_name, &left_table_constraint, rtc);
+                    entries.append(&mut table_constraint_entries);
+
+                    right_table_constraints_map.remove(&left_table_constraint.constraint_name);
+                },
+            }
+        }
+
+        if right_table_constraints_map.len() > 0 {
+            let mut added_table_constraints : Vec<&db::thing::TableConstraint> = right_table_constraints_map.values().collect();
+            added_table_constraints.sort_unstable_by_key(|tc| (&tc.table_name, &tc.constraint_name));
+            
+            for right_table_constraint in added_table_constraints {
+                entries.push(Addition { path: vec![Schema(String::from(schema_name)), Table(right_table_constraint.table_name.clone())], thing: TableConstraint(right_table_constraint.constraint_name.clone()) });
+            }
+        }
+
+        Ok(entries)
+    }
+    
+    fn compare_table_privileges(&mut self, schema_name: &str) -> Result<Vec<ReportEntry>, Error> {
+        let left_table_privileges = self.left_db.table_privileges(schema_name)?;
+        let right_table_privileges = self.right_db.table_privileges(schema_name)?;
+
+        let mut right_table_privileges_map : HashMap<(String, String, String), db::thing::TablePrivilege> = right_table_privileges.into_iter().map(|c| ((c.table_name.clone(), c.grantor.clone(), c.grantee.clone()), c)).collect();
+        let mut entries = Vec::new();
+
+        for left_table_privilege in left_table_privileges {
+            let right_table_privilege = right_table_privileges_map.get_mut(&(left_table_privilege.table_name.clone(), left_table_privilege.grantor.clone(), left_table_privilege.grantee.clone()));
+
+            match right_table_privilege {
+                None => entries.push(Removal { path: vec![Schema(String::from(schema_name)), Table(String::from(left_table_privilege.table_name.clone()))], thing: TablePrivilege(left_table_privilege.grantor.clone(), left_table_privilege.grantee.clone()) }),
+                Some(..) => _ = right_table_privileges_map.remove(&(left_table_privilege.table_name.clone(), left_table_privilege.grantor.clone(), left_table_privilege.grantee.clone())),
+            }
+        }
+
+        if right_table_privileges_map.len() > 0 {
+            let mut added_table_privileges : Vec<&db::thing::TablePrivilege> = right_table_privileges_map.values().collect();
+            added_table_privileges.sort_unstable_by_key(|tp| (&tp.table_name, &tp.grantor, &tp.grantee));
+
+            for right_table_privilege in added_table_privileges {
+                entries.push(Addition { path: vec![Schema(String::from(schema_name)), Table(right_table_privilege.table_name.clone())], thing: ColumnPrivilege(right_table_privilege.grantor.clone(), right_table_privilege.grantee.clone()) });
+            }
+        }
+
         Ok(entries)
     }
 
@@ -249,7 +347,10 @@ impl Comparer {
         }
 
         if right_triggers_map.len() > 0 {
-            for right_trigger in right_triggers_map.values() {
+            let mut added_triggers : Vec<&db::thing::Trigger> = right_triggers_map.values().collect();
+            added_triggers.sort_unstable_by_key(|t| (&t.event_object_table, &t.trigger_name));
+            
+            for right_trigger in added_triggers {
                 entries.push(Addition { path: vec![Schema(String::from(schema_name)), Table(right_trigger.event_object_table.clone())], thing: Trigger(right_trigger.trigger_name.clone()) });
             }
         }
@@ -278,6 +379,8 @@ impl Comparer {
                 }
             }
         }
+
+        // added already detected by table comparison
 
         Ok(entries)
     }

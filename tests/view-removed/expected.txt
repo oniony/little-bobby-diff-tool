@@ -1,1 +1,3 @@
+schema 'test': table 'manager': column 'id' removed
+schema 'test': table 'manager': column 'name' removed
 schema 'test': table 'manager' removed

@@ -1,6 +1,6 @@
-schema 'test': table 'manager': property 'is_insertable_into': changed from 'YES' to 'NO'
 schema 'test': table 'manager': column 'id': property 'is_updatable': changed from 'YES' to 'NO'
 schema 'test': table 'manager': column 'name': property 'is_updatable': changed from 'YES' to 'NO'
+schema 'test': table 'manager': property 'is_insertable_into': changed from 'YES' to 'NO'
 schema 'test': view 'manager': property 'view_definition': changed from ' SELECT id,
     name
    FROM test.employee

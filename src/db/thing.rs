@@ -1,18 +1,6 @@
 #[derive(Clone, PartialEq)]
-pub struct Schema {
-    pub schema_name: String,
-    pub schema_owner: String,
-}
-
-#[derive(Clone, PartialEq)]
-pub struct Table {
-    pub table_name: String,
-    pub table_type: String,
-    pub is_insertable_into: String,
-}
-
-#[derive(Clone, PartialEq)]
 pub struct Column {
+    pub table_name: String,
     pub column_name: String,
     pub ordinal_position: i32,
     pub column_default: Option<String>,
@@ -30,15 +18,13 @@ pub struct Column {
 }
 
 #[derive(Clone, PartialEq)]
-pub struct View {
-    pub view_name: String,
-    pub view_definition: Option<String>,
-    pub check_option: String,
-    pub is_updatable: String,
-    pub is_insertable_into: String,
-    pub is_trigger_updatable: String,
-    pub is_trigger_deletable: String,
-    pub is_trigger_insertable_into: String,
+pub struct ColumnPrivilege {
+    pub grantor: String,
+    pub grantee: String,
+    pub table_name: String,
+    pub column_name: String,
+    pub privilege_type: String,
+    pub is_grantable: String,
 }
 
 #[derive(Clone, PartialEq)]
@@ -57,13 +43,18 @@ pub struct Routine {
 }
 
 #[derive(Clone, PartialEq)]
-pub struct TableConstraint {
-    pub constraint_name: String,
-    pub table_name: String,
-    pub constraint_type: String,
-    pub is_deferrable: String,
-    pub initially_deferred: String,
-    pub nulls_distinct: Option<String>,
+pub struct RoutinePrivilege {
+    pub grantor: String,
+    pub grantee: String,
+    pub signature: String,
+    pub privilege_type: String,
+    pub is_grantable: String,
+}
+
+#[derive(Clone, PartialEq)]
+pub struct Schema {
+    pub schema_name: String,
+    pub schema_owner: String,
 }
 
 #[derive(Clone, PartialEq)]
@@ -81,6 +72,33 @@ pub struct Sequence {
 }
 
 #[derive(Clone, PartialEq)]
+pub struct Table {
+    pub table_name: String,
+    pub table_type: String,
+    pub is_insertable_into: String,
+}
+
+#[derive(Clone, PartialEq)]
+pub struct TablePrivilege {
+    pub grantor: String,
+    pub grantee: String,
+    pub table_name: String,
+    pub privilege_type: String,
+    pub is_grantable: String,
+    pub with_hierarchy: String,
+}
+
+#[derive(Clone, PartialEq)]
+pub struct TableConstraint {
+    pub constraint_name: String,
+    pub table_name: String,
+    pub constraint_type: String,
+    pub is_deferrable: String,
+    pub initially_deferred: String,
+    pub nulls_distinct: Option<String>,
+}
+
+#[derive(Clone, PartialEq)]
 pub struct Trigger {
     pub trigger_name: String,
     pub event_manipulation: String,
@@ -93,4 +111,16 @@ pub struct Trigger {
     pub action_timing: String,
     pub action_reference_old_table: Option<String>,
     pub action_reference_new_table: Option<String>,
+}
+
+#[derive(Clone, PartialEq)]
+pub struct View {
+    pub view_name: String,
+    pub view_definition: Option<String>,
+    pub check_option: String,
+    pub is_updatable: String,
+    pub is_insertable_into: String,
+    pub is_trigger_updatable: String,
+    pub is_trigger_deletable: String,
+    pub is_trigger_insertable_into: String,
 }

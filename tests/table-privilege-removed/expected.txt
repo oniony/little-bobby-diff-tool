@@ -1,0 +1,4 @@
+schema 'test': table 'employee': column 'id': privilege 'postgres' -> 'melindia' removed
+schema 'test': table 'employee': column 'name': privilege 'postgres' -> 'melindia' removed
+schema 'test': table 'employee': column 'role_id': privilege 'postgres' -> 'melindia' removed
+schema 'test': table 'employee': privilege 'postgres' -> 'melindia' removed

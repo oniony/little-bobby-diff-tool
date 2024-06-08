@@ -1,0 +1,4 @@
+schema 'test': table 'employee': column 'id': privilege 'postgres' -> 'hagne' added
+schema 'test': table 'employee': column 'name': privilege 'postgres' -> 'hagne' added
+schema 'test': table 'employee': column 'role_id': privilege 'postgres' -> 'hagne' added
+schema 'test': table 'employee': privilege 'postgres' -> 'hagne' added
