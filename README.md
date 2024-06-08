@@ -17,13 +17,10 @@ It currently compares the following across one or more schemas.
 - [X] Table Constraints
 - [X] Table Privileges
 - [X] Triggers
-- [X] Views
-
-The following are currently not compared:
-
 - [ ] Usage Privileges
 - [ ] User Defined Types
-- [X] User Define Type Privileges
+- [ ] User Define Type Privileges
+- [X] Views
 
 # Compilation
 
