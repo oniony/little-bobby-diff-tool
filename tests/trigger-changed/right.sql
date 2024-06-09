@@ -22,7 +22,7 @@ $$
 
 LANGUAGE plpgsql;
 CREATE TRIGGER employee_added
-BEFORE UPDATE ON employee
+BEFORE INSERT OR UPDATE ON employee
 FOR EACH ROW
 WHEN (NEW.role_id = 666)
 EXECUTE FUNCTION do_something();

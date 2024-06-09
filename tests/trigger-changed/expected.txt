@@ -1,4 +1,5 @@
-schema 'test': table 'employee': trigger 'employee_added': property 'event_manipulation': changed from 'INSERT' to 'UPDATE'
-schema 'test': table 'employee': trigger 'employee_added': property 'action_condition': changed from '<none>' to '(new.role_id = 666)'
-schema 'test': table 'employee': trigger 'employee_added': property 'action_statement': changed from 'EXECUTE FUNCTION test.do_nothing()' to 'EXECUTE FUNCTION test.do_something()'
-schema 'test': table 'employee': trigger 'employee_added': property 'action_timing': changed from 'AFTER' to 'BEFORE'
+schema 'test': table 'employee': trigger 'employee_added' ('DELETE') removed
+schema 'test': table 'employee': trigger 'employee_added' ('INSERT'): property 'action_condition': changed from '<none>' to '(new.role_id = 666)'
+schema 'test': table 'employee': trigger 'employee_added' ('INSERT'): property 'action_statement': changed from 'EXECUTE FUNCTION test.do_nothing()' to 'EXECUTE FUNCTION test.do_something()'
+schema 'test': table 'employee': trigger 'employee_added' ('INSERT'): property 'action_timing': changed from 'AFTER' to 'BEFORE'
+schema 'test': table 'employee': trigger 'employee_added' ('UPDATE') added

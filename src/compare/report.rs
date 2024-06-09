@@ -45,7 +45,7 @@ pub enum Thing {
     Sequence(String),
     Table(String),
     TablePrivilege(String, String),
-    Trigger(String),
+    Trigger(String, String),
     View(String),
 }
 
@@ -62,7 +62,7 @@ impl Display for Thing {
             Thing::Table(name) => write!(f, "table '{}'", name),
             Thing::TableConstraint(name) => write!(f, "constraint '{}'", name),
             Thing::TablePrivilege(grantor, grantee) => write!(f, "privilege '{}' -> '{}'", grantor, grantee),
-            Thing::Trigger(name) => write!(f, "trigger '{}'", name),
+            Thing::Trigger(name, event) => write!(f, "trigger '{}' ('{}')", name, event),
             Thing::View(name) => write!(f, "view '{}'", name),
         }
     }

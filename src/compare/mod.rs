@@ -329,31 +329,31 @@ impl Comparer {
         let left_triggers = self.left_db.triggers(schema_name)?;
         let right_triggers = self.right_db.triggers(schema_name)?;
 
-        let mut right_triggers_map : HashMap<String, db::thing::Trigger> = right_triggers.into_iter().map(|t| (t.trigger_name.clone(), t)).collect();
+        let mut right_triggers_map : HashMap<(String, String), db::thing::Trigger> = right_triggers.into_iter().map(|t| ((t.trigger_name.clone(), t.event_manipulation.clone()), t)).collect();
         let mut entries = Vec::new();
 
         for left_trigger in left_triggers {
-            let right_trigger = right_triggers_map.get(&left_trigger.trigger_name);
+            let right_trigger = right_triggers_map.get(&(left_trigger.trigger_name.clone(), left_trigger.event_manipulation.clone()));
 
             match right_trigger {
                 None => {
-                    entries.push(Removal { path: vec![Schema(String::from(schema_name)), Table(left_trigger.event_object_table.clone())], thing: Trigger(left_trigger.trigger_name) });
+                    entries.push(Removal { path: vec![Schema(String::from(schema_name)), Table(left_trigger.event_object_table.clone())], thing: Trigger(left_trigger.trigger_name, left_trigger.event_manipulation) });
                 },
                 Some(rt) => {
                     let mut trigger_entries = self.compare_trigger(schema_name, &left_trigger, rt);
                     entries.append(&mut trigger_entries);
 
-                    right_triggers_map.remove(&left_trigger.trigger_name);
+                    right_triggers_map.remove(&(left_trigger.trigger_name.clone(), left_trigger.event_manipulation.clone()));
                 },
             }
         }
 
         if right_triggers_map.len() > 0 {
             let mut added_triggers : Vec<&db::thing::Trigger> = right_triggers_map.values().collect();
-            added_triggers.sort_unstable_by_key(|t| (&t.event_object_table, &t.trigger_name));
+            added_triggers.sort_unstable_by_key(|t| (&t.event_object_table, &t.trigger_name, &t.event_manipulation));
             
             for right_trigger in added_triggers {
-                entries.push(Addition { path: vec![Schema(String::from(schema_name)), Table(right_trigger.event_object_table.clone())], thing: Trigger(right_trigger.trigger_name.clone()) });
+                entries.push(Addition { path: vec![Schema(String::from(schema_name)), Table(right_trigger.event_object_table.clone())], thing: Trigger(right_trigger.trigger_name.clone(), right_trigger.event_manipulation.clone()) });
             }
         }
 
@@ -490,9 +490,8 @@ impl Comparer {
         let mut entries = Vec::new();
 
         //TODO work out how to better clone this
-        let path = || vec![Schema(String::from(schema_name)), Table(left.event_object_table.clone()), Trigger(left.trigger_name.clone())];
+        let path = || vec![Schema(String::from(schema_name)), Table(left.event_object_table.clone()), Trigger(left.trigger_name.clone(), left.event_manipulation.clone())];
 
-        entries.push(self.compare_property(path(), "event_manipulation", &left.event_manipulation, &right.event_manipulation));
         entries.push(self.compare_property(path(), "event_object_schema", &left.event_object_schema, &right.event_object_schema));
         entries.push(self.compare_property(path(), "event_object_table", &left.event_object_table, &right.event_object_table));
         entries.push(self.compare_property(path(), "action_order", &left.action_order, &right.action_order));

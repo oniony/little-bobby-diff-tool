@@ -463,7 +463,7 @@ FROM
 WHERE
     trigger_schema = $1
 ORDER BY
-    trigger_name;"#,
+    trigger_name, event_manipulation;"#,
                                          &[&schema_name])?;
 
         for row in rows {

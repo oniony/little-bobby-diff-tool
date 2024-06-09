@@ -1,1 +1,3 @@
-schema 'test': table 'employee': trigger 'employee_added' removed
+schema 'test': table 'employee': trigger 'employee_added' ('DELETE') removed
+schema 'test': table 'employee': trigger 'employee_added' ('INSERT') removed
+schema 'test': table 'employee': trigger 'employee_added' ('UPDATE') removed

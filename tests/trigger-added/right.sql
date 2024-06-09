@@ -13,6 +13,7 @@ $$
 LANGUAGE plpgsql;
 
 CREATE TRIGGER employee_added
-AFTER INSERT ON employee
+AFTER INSERT OR UPDATE OR DELETE
+ON employee
 FOR EACH ROW
 EXECUTE FUNCTION do_nothing();
