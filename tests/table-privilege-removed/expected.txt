@@ -1,4 +1,12 @@
-schema 'test': table 'employee': column 'id': privilege 'postgres' -> 'melindia' removed
-schema 'test': table 'employee': column 'name': privilege 'postgres' -> 'melindia' removed
-schema 'test': table 'employee': column 'role_id': privilege 'postgres' -> 'melindia' removed
-schema 'test': table 'employee': privilege 'postgres' -> 'melindia' removed
+schema 'test': table 'employee': column 'id': privilege  'INSERT' 'postgres' -> 'melindia' removed
+schema 'test': table 'employee': column 'id': privilege  'SELECT' 'postgres' -> 'melindia' removed
+schema 'test': table 'employee': column 'id': privilege  'UPDATE' 'postgres' -> 'melindia' removed
+schema 'test': table 'employee': column 'name': privilege  'INSERT' 'postgres' -> 'melindia' removed
+schema 'test': table 'employee': column 'name': privilege  'SELECT' 'postgres' -> 'melindia' removed
+schema 'test': table 'employee': column 'name': privilege  'UPDATE' 'postgres' -> 'melindia' removed
+schema 'test': table 'employee': column 'role_id': privilege  'INSERT' 'postgres' -> 'melindia' removed
+schema 'test': table 'employee': column 'role_id': privilege  'SELECT' 'postgres' -> 'melindia' removed
+schema 'test': table 'employee': column 'role_id': privilege  'UPDATE' 'postgres' -> 'melindia' removed
+schema 'test': table 'employee': privilege 'INSERT' 'postgres' -> 'melindia' removed
+schema 'test': table 'employee': privilege 'SELECT' 'postgres' -> 'melindia' removed
+schema 'test': table 'employee': privilege 'UPDATE' 'postgres' -> 'melindia' removed

@@ -5,6 +5,6 @@ CREATE TABLE employee (
 
 CREATE ROLE melindia;
 
-GRANT SELECT
+GRANT SELECT, INSERT, UPDATE
 ON TABLE employee
 TO melindia;

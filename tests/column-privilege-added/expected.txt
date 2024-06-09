@@ -1,1 +1,3 @@
-schema 'test': table 'employee': column 'name': privilege 'postgres' -> 'persephone' added
+schema 'test': table 'employee': column 'name': privilege 'INSERT' 'postgres' -> 'persephone' added
+schema 'test': table 'employee': column 'name': privilege 'SELECT' 'postgres' -> 'persephone' added
+schema 'test': table 'employee': column 'name': privilege 'UPDATE' 'postgres' -> 'persephone' added

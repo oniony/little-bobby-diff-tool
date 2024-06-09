@@ -36,15 +36,15 @@ pub enum ReportEntry {
 #[derive(Debug)]
 pub enum Thing {
     Column(String),
-    ColumnPrivilege(String, String),
+    ColumnPrivilege(String, String, String),
     TableConstraint(String),
     Property(String),
     Routine(String),
-    RoutinePrivilege(String, String),
+    RoutinePrivilege(String, String, String),
     Schema(String),
     Sequence(String),
     Table(String),
-    TablePrivilege(String, String),
+    TablePrivilege(String, String, String),
     Trigger(String, String),
     View(String),
 }
@@ -53,15 +53,15 @@ impl Display for Thing {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Thing::Column(column) => write!(f, "column '{}'", column),
-            Thing::ColumnPrivilege(grantor, grantee) => write!(f, "privilege '{}' -> '{}'", grantor, grantee),
+            Thing::ColumnPrivilege(privilege_type, grantor, grantee) => write!(f, "privilege '{}' '{}' -> '{}'", privilege_type, grantor, grantee),
             Thing::Property(name) => write!(f, "property '{}'", name),
             Thing::Routine(name) => write!(f, "routine '{}'", name),
-            Thing::RoutinePrivilege(grantor, grantee) => write!(f, "privilege '{}' -> '{}'", grantor, grantee),
+            Thing::RoutinePrivilege(privilege_type, grantor, grantee) => write!(f, "privilege '{}' '{}' -> '{}'", privilege_type, grantor, grantee),
             Thing::Schema(name) => write!(f, "schema '{}'", name),
             Thing::Sequence(name) => write!(f, "sequence '{}'", name),
             Thing::Table(name) => write!(f, "table '{}'", name),
             Thing::TableConstraint(name) => write!(f, "constraint '{}'", name),
-            Thing::TablePrivilege(grantor, grantee) => write!(f, "privilege '{}' -> '{}'", grantor, grantee),
+            Thing::TablePrivilege(privilege_type, grantor, grantee) => write!(f, "privilege '{}' '{}' -> '{}'", privilege_type, grantor, grantee),
             Thing::Trigger(name, event) => write!(f, "trigger '{}' ('{}')", name, event),
             Thing::View(name) => write!(f, "view '{}'", name),
         }

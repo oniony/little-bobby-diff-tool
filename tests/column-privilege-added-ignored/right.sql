@@ -5,6 +5,6 @@ CREATE TABLE employee (
 
 CREATE ROLE melitodes;
 
-GRANT SELECT (name)
+GRANT SELECT (name), INSERT (name), UPDATE (name)
 ON TABLE employee
 TO melitodes;

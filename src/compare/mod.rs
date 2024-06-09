@@ -84,24 +84,24 @@ impl Comparer {
         let left_column_privileges = self.left_db.column_privileges(schema_name)?;
         let right_column_privileges = self.right_db.column_privileges(schema_name)?;
 
-        let mut right_column_privileges_map : HashMap<(String, String, String, String), db::thing::ColumnPrivilege> = right_column_privileges.into_iter().map(|c| ((c.table_name.clone(), c.column_name.clone(), c.grantor.clone(), c.grantee.clone()), c)).collect();
+        let mut right_column_privileges_map : HashMap<(String, String, String, String, String), db::thing::ColumnPrivilege> = right_column_privileges.into_iter().map(|c| ((c.table_name.clone(), c.column_name.clone(), c.privilege_type.clone(), c.grantor.clone(), c.grantee.clone()), c)).collect();
         let mut entries = Vec::new();
 
         for left_column_privilege in left_column_privileges {
-            let right_column_privilege = right_column_privileges_map.get_mut(&(left_column_privilege.table_name.clone(), left_column_privilege.column_name.clone(), left_column_privilege.grantor.clone(), left_column_privilege.grantee.clone()));
+            let right_column_privilege = right_column_privileges_map.get_mut(&(left_column_privilege.table_name.clone(), left_column_privilege.column_name.clone(), left_column_privilege.privilege_type.clone(), left_column_privilege.grantor.clone(), left_column_privilege.grantee.clone()));
 
             match right_column_privilege {
-                None => entries.push(Removal { path: vec![Schema(String::from(schema_name)), Table(String::from(left_column_privilege.table_name.clone())), Column(String::from(left_column_privilege.column_name.clone()))], thing: ColumnPrivilege(left_column_privilege.grantor.clone(), left_column_privilege.grantee.clone()) }),
-                Some(..) => _ = right_column_privileges_map.remove(&(left_column_privilege.table_name, left_column_privilege.column_name.clone(), left_column_privilege.grantor.clone(), left_column_privilege.grantee.clone())),
+                None => entries.push(Removal { path: vec![Schema(String::from(schema_name)), Table(String::from(left_column_privilege.table_name.clone())), Column(String::from(left_column_privilege.column_name.clone()))], thing: ColumnPrivilege(left_column_privilege.privilege_type, left_column_privilege.grantor.clone(), left_column_privilege.grantee.clone()) }),
+                Some(..) => _ = right_column_privileges_map.remove(&(left_column_privilege.table_name, left_column_privilege.column_name.clone(), left_column_privilege.privilege_type.clone(), left_column_privilege.grantor.clone(), left_column_privilege.grantee.clone())),
             }
         }
 
         if right_column_privileges_map.len() > 0 {
             let mut added_column_privileges : Vec<&db::thing::ColumnPrivilege> = right_column_privileges_map.values().collect();
-            added_column_privileges.sort_unstable_by_key(|cp| (&cp.table_name, &cp.column_name, &cp.grantor, &cp.grantee));
+            added_column_privileges.sort_unstable_by_key(|cp| (&cp.table_name, &cp.column_name, &cp.privilege_type, &cp.grantor, &cp.grantee));
             
             for right_column_privilege in added_column_privileges {
-                entries.push(Addition { path: vec![Schema(String::from(schema_name)), Table(right_column_privilege.table_name.clone()), Column(right_column_privilege.column_name.clone())], thing: ColumnPrivilege(right_column_privilege.grantor.clone(), right_column_privilege.grantee.clone()) });
+                entries.push(Addition { path: vec![Schema(String::from(schema_name)), Table(right_column_privilege.table_name.clone()), Column(right_column_privilege.column_name.clone())], thing: ColumnPrivilege(right_column_privilege.privilege_type.clone(), right_column_privilege.grantor.clone(), right_column_privilege.grantee.clone()) });
             }
         }
 
@@ -147,24 +147,24 @@ impl Comparer {
         let left_routine_privileges = self.left_db.routine_privileges(schema_name)?;
         let right_routine_privileges = self.right_db.routine_privileges(schema_name)?;
 
-        let mut right_routine_privileges_map : HashMap<(String, String, String), db::thing::RoutinePrivilege> = right_routine_privileges.into_iter().map(|c| ((c.signature.clone(), c.grantor.clone(), c.grantee.clone()), c)).collect();
+        let mut right_routine_privileges_map : HashMap<(String, String, String, String), db::thing::RoutinePrivilege> = right_routine_privileges.into_iter().map(|c| ((c.signature.clone(), c.privilege_type.clone(), c.grantor.clone(), c.grantee.clone()), c)).collect();
         let mut entries = Vec::new();
 
         for left_routine_privilege in left_routine_privileges {
-            let right_routine_privilege = right_routine_privileges_map.get_mut(&(left_routine_privilege.signature.clone(), left_routine_privilege.grantor.clone(), left_routine_privilege.grantee.clone()));
+            let right_routine_privilege = right_routine_privileges_map.get_mut(&(left_routine_privilege.signature.clone(), left_routine_privilege.privilege_type.clone(), left_routine_privilege.grantor.clone(), left_routine_privilege.grantee.clone()));
 
             match right_routine_privilege {
-                None => entries.push(Removal { path: vec![Schema(String::from(schema_name)), Routine(String::from(left_routine_privilege.signature.clone()))], thing: RoutinePrivilege(left_routine_privilege.grantor.clone(), left_routine_privilege.grantee.clone()) }),
-                Some(..) => _ = right_routine_privileges_map.remove(&(left_routine_privilege.signature, left_routine_privilege.grantor.clone(), left_routine_privilege.grantee.clone())),
+                None => entries.push(Removal { path: vec![Schema(String::from(schema_name)), Routine(String::from(left_routine_privilege.signature.clone()))], thing: RoutinePrivilege(left_routine_privilege.privilege_type.clone(), left_routine_privilege.grantor.clone(), left_routine_privilege.grantee.clone()) }),
+                Some(..) => _ = right_routine_privileges_map.remove(&(left_routine_privilege.signature, left_routine_privilege.privilege_type.clone(), left_routine_privilege.grantor.clone(), left_routine_privilege.grantee.clone())),
             }
         }
 
         if right_routine_privileges_map.len() > 0 {
             let mut added_routine_privileges : Vec<&db::thing::RoutinePrivilege> = right_routine_privileges_map.values().collect();
-            added_routine_privileges.sort_unstable_by_key(|rp| (&rp.signature, &rp.grantor, &rp.grantee));
+            added_routine_privileges.sort_unstable_by_key(|rp| (&rp.signature, &rp.privilege_type, &rp.grantor, &rp.grantee));
 
             for right_routine_privilege in added_routine_privileges {
-                entries.push(Addition { path: vec![Schema(String::from(schema_name)), Routine(right_routine_privilege.signature.clone())], thing: RoutinePrivilege(right_routine_privilege.grantor.clone(), right_routine_privilege.grantee.clone()) });
+                entries.push(Addition { path: vec![Schema(String::from(schema_name)), Routine(right_routine_privilege.signature.clone())], thing: RoutinePrivilege(right_routine_privilege.privilege_type.clone(), right_routine_privilege.grantor.clone(), right_routine_privilege.grantee.clone()) });
             }
         }
 
@@ -301,24 +301,24 @@ impl Comparer {
         let left_table_privileges = self.left_db.table_privileges(schema_name)?;
         let right_table_privileges = self.right_db.table_privileges(schema_name)?;
 
-        let mut right_table_privileges_map : HashMap<(String, String, String), db::thing::TablePrivilege> = right_table_privileges.into_iter().map(|c| ((c.table_name.clone(), c.grantor.clone(), c.grantee.clone()), c)).collect();
+        let mut right_table_privileges_map : HashMap<(String, String, String, String), db::thing::TablePrivilege> = right_table_privileges.into_iter().map(|c| ((c.table_name.clone(), c.privilege_type.clone(), c.grantor.clone(), c.grantee.clone()), c)).collect();
         let mut entries = Vec::new();
 
         for left_table_privilege in left_table_privileges {
-            let right_table_privilege = right_table_privileges_map.get_mut(&(left_table_privilege.table_name.clone(), left_table_privilege.grantor.clone(), left_table_privilege.grantee.clone()));
+            let right_table_privilege = right_table_privileges_map.get_mut(&(left_table_privilege.table_name.clone(), left_table_privilege.privilege_type.clone(), left_table_privilege.grantor.clone(), left_table_privilege.grantee.clone()));
 
             match right_table_privilege {
-                None => entries.push(Removal { path: vec![Schema(String::from(schema_name)), Table(String::from(left_table_privilege.table_name.clone()))], thing: TablePrivilege(left_table_privilege.grantor.clone(), left_table_privilege.grantee.clone()) }),
-                Some(..) => _ = right_table_privileges_map.remove(&(left_table_privilege.table_name.clone(), left_table_privilege.grantor.clone(), left_table_privilege.grantee.clone())),
+                None => entries.push(Removal { path: vec![Schema(String::from(schema_name)), Table(String::from(left_table_privilege.table_name.clone()))], thing: TablePrivilege(left_table_privilege.privilege_type.clone(), left_table_privilege.grantor.clone(), left_table_privilege.grantee.clone()) }),
+                Some(..) => _ = right_table_privileges_map.remove(&(left_table_privilege.table_name.clone(), left_table_privilege.privilege_type.clone(), left_table_privilege.grantor.clone(), left_table_privilege.grantee.clone())),
             }
         }
 
         if right_table_privileges_map.len() > 0 {
             let mut added_table_privileges : Vec<&db::thing::TablePrivilege> = right_table_privileges_map.values().collect();
-            added_table_privileges.sort_unstable_by_key(|tp| (&tp.table_name, &tp.grantor, &tp.grantee));
+            added_table_privileges.sort_unstable_by_key(|tp| (&tp.table_name, &tp.privilege_type, &tp.grantor, &tp.grantee));
 
             for right_table_privilege in added_table_privileges {
-                entries.push(Addition { path: vec![Schema(String::from(schema_name)), Table(right_table_privilege.table_name.clone())], thing: ColumnPrivilege(right_table_privilege.grantor.clone(), right_table_privilege.grantee.clone()) });
+                entries.push(Addition { path: vec![Schema(String::from(schema_name)), Table(right_table_privilege.table_name.clone())], thing: ColumnPrivilege(right_table_privilege.privilege_type.clone(), right_table_privilege.grantor.clone(), right_table_privilege.grantee.clone()) });
             }
         }
 

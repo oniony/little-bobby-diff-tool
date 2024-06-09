@@ -54,33 +54,6 @@ lbdt --left postgres://user:pass@localhost:5432/postgres \
      --ignore-whitespace
 ```
 
-# Versions
-
-## 0.12.0
-
-* Added `--ignore-privileges` option to skip privilege comparison.
-
-## 0.11.0
-
-* Added comparison of privileges.
-
-## 0.10.0
-
-* Added comparison of triggers.
-
-## 0.9.0
-
-* Added comparison of sequences.
-
-## 0.8.0
-
-* Generate report rather than print in-situ.
-
-## 0.6.0
-
-* Added `--ignore-column-ordinal` flag to ignore column ordering differences.
-* Added `--ignore-whitespace` flag to ignore routine whitespace differences.
-
 # About
 
 Little Bobby Diff Tool is written and maintained by Paul Ruane

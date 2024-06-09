@@ -105,6 +105,7 @@ WHERE
 ORDER BY
     table_name,
     column_name,
+    privilege_type,
     grantor,
     grantee;"#,
                                          &[&schema_name])?;
@@ -215,7 +216,8 @@ WHERE
     rp.routine_schema = $1 AND
     rp.grantor != rp.grantee
 ORDER BY
-    signature;"#,
+    signature,
+    privilege_type;"#,
                                          &[&schema_name])?;
 
         for row in rows {
@@ -416,6 +418,7 @@ WHERE
     grantor != grantee
 ORDER BY
     table_name,
+    privilege_type,
     grantor,
     grantee;"#,
                                          &[&schema_name])?;
