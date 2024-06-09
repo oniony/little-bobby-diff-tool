@@ -1,1 +1,2 @@
 schema 'test': table 'employee': constraint 'employee_name_key' added
+schema 'test': table 'employee': constraint 'fk_test' added

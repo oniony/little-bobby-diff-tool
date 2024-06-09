@@ -371,6 +371,7 @@ WHERE
     table_schema = $1 AND
     constraint_type != 'CHECK'
 ORDER BY
+    table_name,
     constraint_name;"#,
                                          &[&schema_name])?;
 

@@ -266,11 +266,11 @@ impl Comparer {
         let left_table_constraints = self.left_db.table_constraints(schema_name)?;
         let right_table_constraints = self.right_db.table_constraints(schema_name)?;
 
-        let mut right_table_constraints_map : HashMap<String, db::thing::TableConstraint> = right_table_constraints.into_iter().map(|t| (t.constraint_name.clone(), t)).collect();
+        let mut right_table_constraints_map : HashMap<(String, String), db::thing::TableConstraint> = right_table_constraints.into_iter().map(|t| ((t.table_name.clone(), t.constraint_name.clone()), t)).collect();
         let mut entries = Vec::new();
 
         for left_table_constraint in left_table_constraints {
-            let right_table_constraint = right_table_constraints_map.get(&left_table_constraint.constraint_name);
+            let right_table_constraint = right_table_constraints_map.get(&(left_table_constraint.table_name.clone(), left_table_constraint.constraint_name.clone()));
 
             match right_table_constraint {
                 None => {
@@ -280,7 +280,7 @@ impl Comparer {
                     let mut table_constraint_entries = self.compare_table_constraint(schema_name, &left_table_constraint, rtc);
                     entries.append(&mut table_constraint_entries);
 
-                    right_table_constraints_map.remove(&left_table_constraint.constraint_name);
+                    right_table_constraints_map.remove(&(left_table_constraint.table_name.clone(), left_table_constraint.constraint_name.clone()));
                 },
             }
         }
