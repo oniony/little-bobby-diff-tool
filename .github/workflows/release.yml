@@ -33,6 +33,11 @@ jobs:
     - name: Build
       run: cargo build --release --verbose
 
+    - name: Test
+      working-directory: ./tests
+      run: |
+        ./run
+
     - name: Archive
       run: |
         mkdir lbdt-${{ github.ref_name}}
