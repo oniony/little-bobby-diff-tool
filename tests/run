@@ -57,9 +57,9 @@ function run() {
 	load-schema 8911 $test left.sql
 	load-schema 8912 $test right.sql
 
-	export extra_args="$(cat $test/args)"
+	local extra_args="$(cat $test/args)"
 
-	../target/debug/lbdt \
+	$lbdt_path \
 		--left=postgresql://postgres:postgres@localhost:8911/postgres \
 		--right=postgresql://postgres:postgres@localhost:8912/postgres \
 		--schema=test \
@@ -81,6 +81,12 @@ start-db 8912
 wait-db 8911
 wait-db 8912
 
+lbdt_path="../target/debug/lbdt"
+if [[ $0 == "--release" ]]; then
+	lbdt_path="../target/release/lbdt"
+	shift
+fi
+
 if [[ $# == 0 ]]; then
 	for dir in $(find . -mindepth 1 -type d | sort); do
 		run $dir
@@ -91,5 +97,5 @@ else
 	done
 fi
 
-#stop-db 8911 >/dev/null || true
-#stop-db 8912 >/dev/null || true
+stop-db 8911 >/dev/null || true
+stop-db 8912 >/dev/null || true
