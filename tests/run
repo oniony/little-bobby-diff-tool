@@ -82,7 +82,7 @@ wait-db 8911
 wait-db 8912
 
 lbdt_path="../target/debug/lbdt"
-if [[ $0 == "--release" ]]; then
+if [[ $1 == "--release" ]]; then
 	lbdt_path="../target/release/lbdt"
 	shift
 fi
