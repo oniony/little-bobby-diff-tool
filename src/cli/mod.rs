@@ -26,41 +26,45 @@ impl CLI {
         
         for schema in args.schema {
             let report = comparer.compare(schema.as_str())?;
-            let report_differences = report.differences();
+
+            let entries = if args.verbose {
+                report.entries()
+            } else {
+                report.differences()
+            };
             
-            if !report_differences.is_empty() {
-                for entry in report_differences.iter() {
-                    match entry {
-                        Addition { path, thing: Column(name) } => println!("{}: column '{}' added", CLI::render_path(path), name),
-                        Addition { path, thing: ColumnPrivilege(privilege_type, grantor, grantee) } => println!("{}: privilege '{}' '{}' -> '{}' added", CLI::render_path(path), privilege_type, grantor, grantee),
-                        Addition { path, thing: Property(name) } => println!("{}: property '{}' added", CLI::render_path(path), name),
-                        Addition { path, thing: Routine(name) } => println!("{}: routine '{}' added", CLI::render_path(path), name),
-                        Addition { path, thing: RoutinePrivilege(privilege_type, grantor, grantee) } => println!("{}: privilege '{}' '{}' -> '{}' added", CLI::render_path(path), privilege_type, grantor, grantee),
-                        Addition { path, thing: Schema(name) } => println!("{}: schema '{}' added", CLI::render_path(path), name),
-                        Addition { path, thing: Sequence(name) } => println!("{}: sequence '{}' added", CLI::render_path(path), name),
-                        Addition { path, thing: Table(name) } => println!("{}: table '{}' added", CLI::render_path(path), name),
-                        Addition { path, thing: TableConstraint(name) } => println!("{}: constraint '{}' added", CLI::render_path(path), name),
-                        Addition { path, thing: TablePrivilege(privilege_type, grantor, grantee) } => println!("{}: privilege '{}' '{}' -> '{}' added", CLI::render_path(path), privilege_type, grantor, grantee),
-                        Addition { path, thing: Trigger(name, event) } => println!("{}: trigger '{}' ('{}') added", CLI::render_path(path), name, event),
-                        Addition { path, thing: View(name) } => println!("{}: view '{}' added", CLI::render_path(path), name),
-                        Removal { path, thing: Column(name) } => println!("{}: column '{}' removed", CLI::render_path(path), name),
-                        Removal { path, thing: ColumnPrivilege(privilege_type, grantor, grantee) } => println!("{}: privilege  '{}' '{}' -> '{}' removed", CLI::render_path(path), privilege_type, grantor, grantee),
-                        Removal { path, thing: Property(name) } => println!("{}: property '{}' removed", CLI::render_path(path), name),
-                        Removal { path, thing: Routine(name) } => println!("{}: routine '{}' removed", CLI::render_path(path), name),
-                        Removal { path, thing: RoutinePrivilege(privilege_type, grantor, grantee) } => println!("{}: privilege  '{}' '{}' -> '{}' removed", CLI::render_path(path), privilege_type, grantor, grantee),
-                        Removal { path, thing: Schema(name) } => println!("{}: schema '{}' removed", CLI::render_path(path), name),
-                        Removal { path, thing: Sequence(name) } => println!("{}: sequence '{}' removed", CLI::render_path(path), name),
-                        Removal { path, thing: Table(name) } => println!("{}: table '{}' removed", CLI::render_path(path), name),
-                        Removal { path, thing: TableConstraint(name) } => println!("{}: constraint '{}' removed", CLI::render_path(path), name),
-                        Removal { path, thing: TablePrivilege(privilege_type, grantor, grantee) } => println!("{}: privilege '{}' '{}' -> '{}' removed", CLI::render_path(path), privilege_type, grantor, grantee),
-                        Removal { path, thing: Trigger(name, event) } => println!("{}: trigger '{}' ('{}') removed", CLI::render_path(path), name, event),
-                        Removal { path, thing: View(name) } => println!("{}: view '{}' removed", CLI::render_path(path), name),
-                        Change { path, left_value, right_value } => println!("{}: changed from '{}' to '{}'", CLI::render_path(path), left_value, right_value),
-                        Match { .. } => (),
-                    }
+            for entry in entries.iter() {
+                match entry {
+                    Addition { path, thing: Column(name) } => println!("{}: column '{}' added", CLI::render_path(path), name),
+                    Addition { path, thing: ColumnPrivilege(privilege_type, grantor, grantee) } => println!("{}: privilege '{}' '{}' -> '{}' added", CLI::render_path(path), privilege_type, grantor, grantee),
+                    Addition { path, thing: Property(name) } => println!("{}: property '{}' added", CLI::render_path(path), name),
+                    Addition { path, thing: Routine(name) } => println!("{}: routine '{}' added", CLI::render_path(path), name),
+                    Addition { path, thing: RoutinePrivilege(privilege_type, grantor, grantee) } => println!("{}: privilege '{}' '{}' -> '{}' added", CLI::render_path(path), privilege_type, grantor, grantee),
+                    Addition { path, thing: Schema(name) } => println!("{}: schema '{}' added", CLI::render_path(path), name),
+                    Addition { path, thing: Sequence(name) } => println!("{}: sequence '{}' added", CLI::render_path(path), name),
+                    Addition { path, thing: Table(name) } => println!("{}: table '{}' added", CLI::render_path(path), name),
+                    Addition { path, thing: TableConstraint(name) } => println!("{}: constraint '{}' added", CLI::render_path(path), name),
+                    Addition { path, thing: TablePrivilege(privilege_type, grantor, grantee) } => println!("{}: privilege '{}' '{}' -> '{}' added", CLI::render_path(path), privilege_type, grantor, grantee),
+                    Addition { path, thing: Trigger(name, event) } => println!("{}: trigger '{}' ('{}') added", CLI::render_path(path), name, event),
+                    Addition { path, thing: View(name) } => println!("{}: view '{}' added", CLI::render_path(path), name),
+                    Removal { path, thing: Column(name) } => println!("{}: column '{}' removed", CLI::render_path(path), name),
+                    Removal { path, thing: ColumnPrivilege(privilege_type, grantor, grantee) } => println!("{}: privilege  '{}' '{}' -> '{}' removed", CLI::render_path(path), privilege_type, grantor, grantee),
+                    Removal { path, thing: Property(name) } => println!("{}: property '{}' removed", CLI::render_path(path), name),
+                    Removal { path, thing: Routine(name) } => println!("{}: routine '{}' removed", CLI::render_path(path), name),
+                    Removal { path, thing: RoutinePrivilege(privilege_type, grantor, grantee) } => println!("{}: privilege  '{}' '{}' -> '{}' removed", CLI::render_path(path), privilege_type, grantor, grantee),
+                    Removal { path, thing: Schema(name) } => println!("{}: schema '{}' removed", CLI::render_path(path), name),
+                    Removal { path, thing: Sequence(name) } => println!("{}: sequence '{}' removed", CLI::render_path(path), name),
+                    Removal { path, thing: Table(name) } => println!("{}: table '{}' removed", CLI::render_path(path), name),
+                    Removal { path, thing: TableConstraint(name) } => println!("{}: constraint '{}' removed", CLI::render_path(path), name),
+                    Removal { path, thing: TablePrivilege(privilege_type, grantor, grantee) } => println!("{}: privilege '{}' '{}' -> '{}' removed", CLI::render_path(path), privilege_type, grantor, grantee),
+                    Removal { path, thing: Trigger(name, event) } => println!("{}: trigger '{}' ('{}') removed", CLI::render_path(path), name, event),
+                    Removal { path, thing: View(name) } => println!("{}: view '{}' removed", CLI::render_path(path), name),
+                    Change { path, left_value, right_value } => println!("{}: changed from '{}' to '{}'", CLI::render_path(path), left_value, right_value),
+                    Match { path, left_value, right_value: _ } => println!("{}: unchanged from '{}'", CLI::render_path(path), left_value),
                 }
-                differences = true;                
             }
+            
+            differences = differences || report.has_differences();
         }
         
         let exit_code = match differences {
@@ -96,5 +100,8 @@ pub struct Args {
     ignore_column_ordinal: bool,
     
     #[arg(short, long, short = 'p', help = "Ignore privilege changes")]
-    ignore_privileges: bool
+    ignore_privileges: bool,
+    
+    #[arg(short, long, short = 'v', help = "Show matches")]
+    verbose: bool,
 }

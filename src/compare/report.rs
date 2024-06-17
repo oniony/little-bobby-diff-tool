@@ -10,14 +10,27 @@ impl Report {
             entries: Vec::new(),
         }
     }
-    
+
+    pub fn has_differences(&self) -> bool {
+        let predicate = |re: &ReportEntry| -> bool {
+            match re {
+                ReportEntry::Match { .. } => false,
+                _ => true,
+            }
+        };
+
+        self.entries.iter().any(predicate)
+    }
+
+    pub fn entries(&self) -> Vec<&ReportEntry> {
+        self.entries.iter().collect()
+    }
+
     pub fn differences(&self) -> Vec<&ReportEntry> {
         let predicate = |re: &&ReportEntry| -> bool {
             match re {
-                ReportEntry::Addition { path: _, thing: _, } => true,
-                ReportEntry::Removal { path: _, thing: _, } => true,
-                ReportEntry::Change { path: _, left_value: _, right_value: _ } => true,
-                ReportEntry::Match { path: _, left_value: _, right_value: _ } => false,
+                ReportEntry::Match { .. } => false,
+                _ => true,
             }
         };
         

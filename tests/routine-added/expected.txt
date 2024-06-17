@@ -1,2 +1,2 @@
 schema 'test': routine 'create_employee(name IN pg_catalog.int4, role_id IN pg_catalog.int4)' added
-schema 'test': routine 'create_employee(name IN pg_catalog.int4, role_id IN pg_catalog.int4)': privilege 'postgres' -> 'PUBLIC' added
+schema 'test': routine 'create_employee(name IN pg_catalog.int4, role_id IN pg_catalog.int4)': privilege 'EXECUTE' 'postgres' -> 'PUBLIC' added

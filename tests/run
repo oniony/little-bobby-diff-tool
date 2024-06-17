@@ -91,5 +91,5 @@ else
 	done
 fi
 
-stop-db 8911 >/dev/null || true
-stop-db 8912 >/dev/null || true
+#stop-db 8911 >/dev/null || true
+#stop-db 8912 >/dev/null || true

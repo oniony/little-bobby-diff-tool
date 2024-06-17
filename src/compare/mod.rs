@@ -180,15 +180,18 @@ impl Comparer {
         
         let mut entries = Vec::new();
         
-        if left_schema.is_none() {
-            entries.push(Addition { path: vec![], thing: Schema(String::from(schema_name)) });
-        }
-        if right_schema.is_none() {
-            entries.push(Removal { path: vec![], thing: Schema(String::from(schema_name)) });
+        if left_schema.is_none() && right_schema.is_none() {
+            // nothing to compare
+        } else {
+            if left_schema.is_none() {
+                entries.push(Addition { path: vec![], thing: Schema(String::from(schema_name)) });
+            } else if right_schema.is_none() {
+                entries.push(Removal { path: vec![], thing: Schema(String::from(schema_name)) });
+            } else {
+                entries.push(self.compare_property(vec![Schema(String::from(schema_name))], "schema_owner", &left_schema.unwrap().schema_owner, &right_schema.unwrap().schema_owner));
+            }
         }
 
-        entries.push(self.compare_property(vec![Schema(String::from(schema_name))], "schema_owner", &left_schema.unwrap().schema_owner, &right_schema.unwrap().schema_owner));
-        
         Ok(entries)
     }
 

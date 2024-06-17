@@ -17,3 +17,8 @@ jobs:
 
     - name: Build
       run: cargo build --verbose
+
+    - name: Test
+      working-directory: ./tests
+      run: |
+        ./run
