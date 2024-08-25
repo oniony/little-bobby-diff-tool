@@ -1,10 +1,14 @@
-schema 'test': table 'department': column 'id': property 'is_nullable': changed from 'NO' to 'YES'
-schema 'test': table 'department': column 'id': property 'is_identity': changed from 'YES' to 'NO'
-schema 'test': table 'department': column 'id': property 'identity_generation': changed from 'ALWAYS' to '<none>'
-schema 'test': table 'department': column 'id': property 'is_updatable': changed from 'YES' to 'NO'
-schema 'test': table 'department': column 'name': property 'is_nullable': changed from 'NO' to 'YES'
-schema 'test': table 'department': column 'name': property 'is_updatable': changed from 'YES' to 'NO'
-schema 'test': table 'department': constraint 'department_name_key' removed
-schema 'test': table 'department': constraint 'department_pkey' removed
-schema 'test': table 'department': property 'table_type': changed from 'BASE TABLE' to 'VIEW'
-schema 'test': table 'department': property 'is_insertable_into': changed from 'YES' to 'NO'
+Schema 'test':
+  Table 'department':
+    Property 'table_type': changed from 'BASE TABLE' to 'VIEW'
+    Property 'is_insertable_into': changed from 'YES' to 'NO'
+    Column 'id':
+      Property 'is_nullable': changed from 'NO' to 'YES'
+      Property 'is_identity': changed from 'YES' to 'NO'
+      Property 'identity_generation': changed from 'ALWAYS' to '<none>'
+      Property 'is_updatable': changed from 'YES' to 'NO'
+    Column 'name':
+      Property 'is_nullable': changed from 'NO' to 'YES'
+      Property 'is_updatable': changed from 'YES' to 'NO'
+    Constraint 'department_name_key': removed
+    Constraint 'department_pkey': removed

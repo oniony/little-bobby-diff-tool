@@ -18,11 +18,9 @@ pub struct Column {
 }
 
 #[derive(Clone, PartialEq)]
-pub struct ColumnPrivilege {
+pub struct Privilege {
     pub grantor: String,
     pub grantee: String,
-    pub table_name: String,
-    pub column_name: String,
     pub privilege_type: String,
     pub is_grantable: String,
 }
@@ -40,15 +38,6 @@ pub struct Routine {
     pub is_deterministic: String,
     pub is_null_call: Option<String>,
     pub security_type: String,
-}
-
-#[derive(Clone, PartialEq)]
-pub struct RoutinePrivilege {
-    pub grantor: String,
-    pub grantee: String,
-    pub signature: String,
-    pub privilege_type: String,
-    pub is_grantable: String,
 }
 
 #[derive(Clone, PartialEq)]
@@ -79,19 +68,8 @@ pub struct Table {
 }
 
 #[derive(Clone, PartialEq)]
-pub struct TablePrivilege {
-    pub grantor: String,
-    pub grantee: String,
-    pub table_name: String,
-    pub privilege_type: String,
-    pub is_grantable: String,
-    pub with_hierarchy: String,
-}
-
-#[derive(Clone, PartialEq)]
 pub struct TableConstraint {
     pub constraint_name: String,
-    pub table_name: String,
     pub constraint_type: String,
     pub is_deferrable: String,
     pub initially_deferred: String,
@@ -102,8 +80,6 @@ pub struct TableConstraint {
 pub struct Trigger {
     pub trigger_name: String,
     pub event_manipulation: String,
-    pub event_object_schema: String,
-    pub event_object_table: String,
     pub action_order: i32,
     pub action_condition: Option<String>,
     pub action_statement: String,

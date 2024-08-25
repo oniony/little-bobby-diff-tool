@@ -1,1 +1,3 @@
-schema 'test': table 'employee': column 'age' added
+Schema 'test':
+  Table 'employee':
+    Column 'age': added

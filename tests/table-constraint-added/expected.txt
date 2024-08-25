@@ -1,2 +1,4 @@
-schema 'test': table 'employee': constraint 'employee_name_key' added
-schema 'test': table 'employee': constraint 'fk_test' added
+Schema 'test':
+  Table 'employee':
+    Constraint 'employee_name_key': added
+    Constraint 'fk_test': added

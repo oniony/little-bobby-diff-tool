@@ -1,82 +1,269 @@
-use std::fmt::{Display, Formatter};
-
-pub struct Report {
-    pub entries: Vec<ReportEntry>,
+pub trait HasChanges {
+    fn has_changes(&self) -> bool;
 }
 
-impl Report {
-    pub fn new() -> Report {
-        Report {
-            entries: Vec::new(),
-        }
-    }
+pub struct SchemaReport {
+    pub entries: Vec<SchemaComparison>
+}
 
-    pub fn has_differences(&self) -> bool {
-        let predicate = |re: &ReportEntry| -> bool {
-            match re {
-                ReportEntry::Match { .. } => false,
-                _ => true,
-            }
-        };
+pub enum SchemaComparison {
+    SchemaAdded { schema_name: String },
+    SchemaRemoved { schema_name: String },
+    SchemaMissing { schema_name: String },
+    SchemaMaintained { schema_name: String, properties: PropertyReport, routines: RoutineReport, sequences: SequenceReport, tables: TableReport, views: ViewReport },
+}
 
-        self.entries.iter().any(predicate)
-    }
-
-    pub fn entries(&self) -> Vec<&ReportEntry> {
-        self.entries.iter().collect()
-    }
-
-    pub fn differences(&self) -> Vec<&ReportEntry> {
-        let predicate = |re: &&ReportEntry| -> bool {
-            match re {
-                ReportEntry::Match { .. } => false,
-                _ => true,
-            }
-        };
-        
-        self.entries.iter().filter(predicate).collect()
+impl HasChanges for SchemaReport {
+    fn has_changes(self: &Self) -> bool {
+        self.entries.iter().any(|s| s.has_changes())
     }
 }
 
-#[derive(Debug)]
-pub enum ReportEntry {
-    Addition { path: Vec<Thing>, thing: Thing },
-    Removal { path: Vec<Thing>, thing: Thing },
-    Change { path: Vec<Thing>, left_value: String, right_value: String },
-    Match { path: Vec<Thing>, left_value: String, right_value: String },
-}
-
-#[derive(Debug)]
-pub enum Thing {
-    Column(String),
-    ColumnPrivilege(String, String, String),
-    TableConstraint(String),
-    Property(String),
-    Routine(String),
-    RoutinePrivilege(String, String, String),
-    Schema(String),
-    Sequence(String),
-    Table(String),
-    TablePrivilege(String, String, String),
-    Trigger(String, String),
-    View(String),
-}
-
-impl Display for Thing {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+impl HasChanges for SchemaComparison {
+    fn has_changes(self: &Self) -> bool {
         match self {
-            Thing::Column(column) => write!(f, "column '{}'", column),
-            Thing::ColumnPrivilege(privilege_type, grantor, grantee) => write!(f, "privilege '{}' '{}' -> '{}'", privilege_type, grantor, grantee),
-            Thing::Property(name) => write!(f, "property '{}'", name),
-            Thing::Routine(name) => write!(f, "routine '{}'", name),
-            Thing::RoutinePrivilege(privilege_type, grantor, grantee) => write!(f, "privilege '{}' '{}' -> '{}'", privilege_type, grantor, grantee),
-            Thing::Schema(name) => write!(f, "schema '{}'", name),
-            Thing::Sequence(name) => write!(f, "sequence '{}'", name),
-            Thing::Table(name) => write!(f, "table '{}'", name),
-            Thing::TableConstraint(name) => write!(f, "constraint '{}'", name),
-            Thing::TablePrivilege(privilege_type, grantor, grantee) => write!(f, "privilege '{}' '{}' -> '{}'", privilege_type, grantor, grantee),
-            Thing::Trigger(name, event) => write!(f, "trigger '{}' ('{}')", name, event),
-            Thing::View(name) => write!(f, "view '{}'", name),
+            SchemaComparison::SchemaAdded { .. } | SchemaComparison::SchemaRemoved { .. } | SchemaComparison::SchemaMissing { .. } => true,
+            SchemaComparison::SchemaMaintained { schema_name: _schema_name, properties, routines, sequences, tables, views } =>
+                properties.has_changes() ||
+                routines.has_changes() ||
+                sequences.has_changes() ||
+                tables.has_changes() ||
+                views.has_changes(),
         }
     }
 }
+
+pub struct PropertyReport {
+    pub entries: Vec<PropertyComparison>
+}
+
+pub enum PropertyComparison {
+    PropertyChanged { property_name: String, left_value: String, right_value: String },
+    PropertyUnchanged { property_name: String, value: String },
+}
+
+impl HasChanges for PropertyReport {
+    fn has_changes(self: &Self) -> bool {
+        self.entries.iter().any(|p| p.has_changes())
+    }
+}
+
+impl HasChanges for PropertyComparison {
+    fn has_changes(self: &Self) -> bool {
+        match self {
+            PropertyComparison::PropertyChanged { .. } => true,
+            PropertyComparison::PropertyUnchanged { .. } => false,
+        }
+    }
+ }
+
+pub struct PrivilegeReport {
+    pub entries: Vec<PrivilegeComparison>
+}
+
+pub enum PrivilegeComparison {
+    PrivilegeAdded { privilege_name: String, grantor: String, grantee: String },
+    PrivilegeRemoved { privilege_name: String, grantor: String, grantee: String },
+    PrivilegeMaintained { privilege_name: String, grantor: String, grantee: String }
+}
+
+impl HasChanges for PrivilegeReport {
+    fn has_changes(self: &Self) -> bool {
+        self.entries.iter().any(|p| p.has_changes())
+    }
+}
+
+impl HasChanges for PrivilegeComparison {
+    fn has_changes(self: &Self) -> bool {
+        match self {
+            PrivilegeComparison::PrivilegeAdded { .. } | PrivilegeComparison::PrivilegeRemoved { .. } => true,
+            PrivilegeComparison::PrivilegeMaintained { .. } => false,
+        }
+    }
+}
+
+pub struct RoutineReport {
+    pub entries: Vec<RoutineComparison>
+}
+
+pub enum RoutineComparison {
+    RoutineAdded { routine_signature: String },
+    RoutineRemoved { routine_signature: String },
+    RoutineMaintained { routine_signature: String, properties: PropertyReport, privileges: PrivilegeReport },
+}
+
+impl HasChanges for RoutineReport {
+    fn has_changes(self: &Self) -> bool {
+        self.entries.iter().any(|r| r.has_changes())
+    }
+}
+
+impl HasChanges for RoutineComparison {
+    fn has_changes(self: &Self) -> bool {
+        match self {
+            RoutineComparison::RoutineAdded { .. } | RoutineComparison::RoutineRemoved { .. } => true,
+            RoutineComparison::RoutineMaintained { routine_signature: _routine_signature, properties, privileges } =>
+                properties.has_changes() ||
+                privileges.has_changes(),
+        }
+    }
+}
+
+pub struct SequenceReport {
+    pub entries: Vec<SequenceComparison>
+}
+
+pub enum SequenceComparison {
+    SequenceAdded { sequence_name: String },
+    SequenceRemoved { sequence_name: String },
+    SequenceMaintained { sequence_name: String, properties: PropertyReport },
+}
+
+impl HasChanges for SequenceReport {
+    fn has_changes(self: &Self) -> bool {
+        self.entries.iter().any(|s| s.has_changes())
+    }
+}
+
+impl HasChanges for SequenceComparison {
+    fn has_changes(self: &Self) -> bool {
+        match self {
+            SequenceComparison::SequenceAdded { .. } | SequenceComparison::SequenceRemoved { .. } => true,
+            SequenceComparison::SequenceMaintained { sequence_name: _sequence_name, properties } => 
+                properties.has_changes(),
+        }
+    }
+}
+
+pub struct TableReport {
+    pub entries: Vec<TableComparison>
+}
+
+pub enum TableComparison {
+    TableAdded { table_name: String },
+    TableRemoved { table_name: String },
+    TableMaintained { table_name: String, properties: PropertyReport, columns: TableColumnReport, privileges: PrivilegeReport, constraints: TableConstraintReport, triggers: TableTriggerReport },
+}
+
+impl HasChanges for TableReport {
+    fn has_changes(self: &Self) -> bool {
+        self.entries.iter().any(|t| t.has_changes())
+    }
+}
+
+impl HasChanges for TableComparison {
+    fn has_changes(self: &Self) -> bool {
+        match self {
+            TableComparison::TableAdded { .. } | TableComparison::TableRemoved { .. } => true,
+            TableComparison::TableMaintained { table_name: _table_name, properties, columns, privileges, constraints, triggers } =>
+                properties.has_changes() ||
+                columns.has_changes() ||
+                privileges.has_changes() ||
+                constraints.has_changes() ||
+                triggers.has_changes(),
+        }
+    }
+}
+
+pub struct TableColumnReport {
+    pub entries: Vec<TableColumnComparison>
+}
+
+pub enum TableColumnComparison {
+    ColumnAdded { column_name: String },
+    ColumnRemoved { column_name: String },
+    ColumnMaintained { column_name: String, properties: PropertyReport, privileges: PrivilegeReport }
+}
+
+impl HasChanges for TableColumnReport {
+    fn has_changes(self: &Self) -> bool {
+        self.entries.iter().any(|c| c.has_changes())
+    }
+}
+
+impl HasChanges for TableColumnComparison {
+    fn has_changes(self: &Self) -> bool {
+        match self {
+            TableColumnComparison::ColumnAdded { .. } | TableColumnComparison::ColumnRemoved { .. } => true,
+            TableColumnComparison::ColumnMaintained { column_name: _column_name, properties, privileges } =>
+                properties.has_changes() |
+                privileges.has_changes(),
+        }
+    }
+}
+
+pub struct TableConstraintReport {
+    pub entries: Vec<TableConstraintComparison>
+}
+
+pub enum TableConstraintComparison {
+    ConstraintAdded { constraint_name: String },
+    ConstraintRemoved { constraint_name: String },
+    ConstraintMaintained { constraint_name: String, properties: PropertyReport },
+}
+
+impl HasChanges for TableConstraintReport {
+    fn has_changes(self: &Self) -> bool {
+        self.entries.iter().any(|c| c.has_changes())
+    }
+}
+
+impl HasChanges for TableConstraintComparison {
+    fn has_changes(self: &Self) -> bool {
+        match self {
+            TableConstraintComparison::ConstraintAdded { .. } | TableConstraintComparison::ConstraintRemoved { .. } => true,
+            TableConstraintComparison::ConstraintMaintained { constraint_name: _constraint_name, properties } =>
+                properties.has_changes(),
+        }
+    }
+}
+
+pub struct TableTriggerReport {
+    pub entries: Vec<TableTriggerComparison>
+}
+
+pub enum TableTriggerComparison {
+    TriggerAdded { trigger_name: String, event_manipulation: String },
+    TriggerRemoved { trigger_name: String, event_manipulation: String },
+    TriggerMaintained { trigger_name: String, event_manipulation: String, properties: PropertyReport }
+}
+
+impl HasChanges for TableTriggerReport {
+    fn has_changes(self: &Self) -> bool {
+        self.entries.iter().any(|t| t.has_changes())
+    }
+}
+
+impl HasChanges for TableTriggerComparison {
+    fn has_changes(self: &Self) -> bool {
+        match self {
+            TableTriggerComparison::TriggerAdded { .. } | TableTriggerComparison::TriggerRemoved { .. } => true,
+            TableTriggerComparison::TriggerMaintained { trigger_name: _trigger_name, event_manipulation: _event_manipulation, properties } => 
+                properties.has_changes(),
+        }
+    }
+}
+
+pub struct ViewReport {
+    pub entries: Vec<ViewComparison>
+}
+
+pub enum ViewComparison {
+    ViewMaintained { view_name: String, properties: PropertyReport },
+}
+
+impl HasChanges for ViewReport {
+    fn has_changes(self: &Self) -> bool {
+        self.entries.iter().any(|v| v.has_changes())
+    }
+}
+
+impl HasChanges for ViewComparison {
+    fn has_changes(self: &Self) -> bool {
+        match self {
+            ViewComparison::ViewMaintained { view_name: _view_name, properties } =>
+                properties.has_changes(),
+        }
+    }
+}
+

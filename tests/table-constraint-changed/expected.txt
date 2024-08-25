@@ -1,2 +1,5 @@
-schema 'test': table 'employee': constraint 'my_constraint': property 'constraint_type': changed from 'PRIMARY KEY' to 'FOREIGN KEY'
-schema 'test': table 'employee': constraint 'employee_pkey' added
+Schema 'test':
+  Table 'employee':
+    Constraint 'my_constraint':
+      Property 'constraint_type': changed from 'PRIMARY KEY' to 'FOREIGN KEY'
+    Constraint 'employee_pkey': added

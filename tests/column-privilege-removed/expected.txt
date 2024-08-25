@@ -1,3 +1,6 @@
-schema 'test': table 'employee': column 'name': privilege  'INSERT' 'postgres' -> 'despoina' removed
-schema 'test': table 'employee': column 'name': privilege  'SELECT' 'postgres' -> 'despoina' removed
-schema 'test': table 'employee': column 'name': privilege  'UPDATE' 'postgres' -> 'despoina' removed
+Schema 'test':
+  Table 'employee':
+    Column 'name':
+      Privilege 'INSERT' (postgres->despoina): removed
+      Privilege 'SELECT' (postgres->despoina): removed
+      Privilege 'UPDATE' (postgres->despoina): removed
