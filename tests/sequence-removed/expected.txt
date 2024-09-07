@@ -1,1 +1,2 @@
-schema 'test': sequence 'department_id' removed
+Schema 'test':
+  Sequence 'department_id': removed

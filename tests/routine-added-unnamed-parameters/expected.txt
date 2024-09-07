@@ -1,2 +1,2 @@
-schema 'test': routine 'create_employee($1 IN pg_catalog.int4, $2 IN pg_catalog.int4)' added
-schema 'test': routine 'create_employee($1 IN pg_catalog.int4, $2 IN pg_catalog.int4)': privilege 'EXECUTE' 'postgres' -> 'PUBLIC' added
+Schema 'test':
+  Routine 'create_employee($1 IN pg_catalog.int4, $2 IN pg_catalog.int4)': added

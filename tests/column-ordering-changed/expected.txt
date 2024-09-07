@@ -1,2 +1,6 @@
-schema 'test': table 'employee': column 'name': property 'ordinal_position': changed from '2' to '3'
-schema 'test': table 'employee': column 'role_id': property 'ordinal_position': changed from '3' to '2'
+Schema 'test':
+  Table 'employee':
+    Column 'name':
+      Property 'ordinal_position': changed from '2' to '3'
+    Column 'role_id':
+      Property 'ordinal_position': changed from '3' to '2'

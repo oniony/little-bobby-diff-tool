@@ -1,3 +1,5 @@
-schema 'test': table 'employee': trigger 'employee_added' ('DELETE') added
-schema 'test': table 'employee': trigger 'employee_added' ('INSERT') added
-schema 'test': table 'employee': trigger 'employee_added' ('UPDATE') added
+Schema 'test':
+  Table 'employee':
+    Trigger 'employee_added' (DELETE): added
+    Trigger 'employee_added' (INSERT): added
+    Trigger 'employee_added' (UPDATE): added

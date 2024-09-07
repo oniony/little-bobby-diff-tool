@@ -1,1 +1,2 @@
-schema 'test': sequence 'department_id' added
+Schema 'test':
+  Sequence 'department_id': added

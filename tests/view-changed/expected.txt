@@ -1,7 +1,12 @@
-schema 'test': table 'manager': column 'id': property 'is_updatable': changed from 'YES' to 'NO'
-schema 'test': table 'manager': column 'name': property 'is_updatable': changed from 'YES' to 'NO'
-schema 'test': table 'manager': property 'is_insertable_into': changed from 'YES' to 'NO'
-schema 'test': view 'manager': property 'view_definition': changed from ' SELECT id,
+Schema 'test':
+  Table 'manager':
+    Property 'is_insertable_into': changed from 'YES' to 'NO'
+    Column 'id':
+      Property 'is_updatable': changed from 'YES' to 'NO'
+    Column 'name':
+      Property 'is_updatable': changed from 'YES' to 'NO'
+  View 'manager':
+    Property 'view_definition': changed from ' SELECT id,
     name
    FROM test.employee
   WHERE (role_id = 6);' to ' SELECT e.id,
@@ -9,5 +14,5 @@ schema 'test': view 'manager': property 'view_definition': changed from ' SELECT
    FROM (test.employee e
      JOIN test.role r ON ((e.role_id = r.id)))
   WHERE (r.name = 'manager'::text);'
-schema 'test': view 'manager': property 'is_updatable': changed from 'YES' to 'NO'
-schema 'test': view 'manager': property 'is_insertable_into': changed from 'YES' to 'NO'
+    Property 'is_updatable': changed from 'YES' to 'NO'
+    Property 'is_insertable_into': changed from 'YES' to 'NO'

@@ -1,1 +1,3 @@
-schema 'test': table 'employee': constraint 'employee_name_key' removed
+Schema 'test':
+  Table 'employee':
+    Constraint 'employee_name_key': removed

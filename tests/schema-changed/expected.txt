@@ -1,0 +1,2 @@
+Schema 'test_changed':
+  Property 'schema_owner': changed from 'postgres' to 'test_changed_role'

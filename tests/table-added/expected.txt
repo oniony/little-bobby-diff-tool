@@ -1,5 +1,2 @@
-schema 'test': table 'department': column 'id' added
-schema 'test': table 'department': column 'name' added
-schema 'test': table 'department': constraint 'department_name_key' added
-schema 'test': table 'department': constraint 'department_pkey' added
-schema 'test': table 'department' added
+Schema 'test':
+  Table 'department': added

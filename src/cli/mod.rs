@@ -1,83 +1,307 @@
-use std::process::ExitCode;
+use std::process;
 use clap::{arg, Parser};
 use postgres::Error;
-use crate::{compare, db};
-use crate::compare::report::Thing;
-use crate::compare::report::ReportEntry::{Addition, Change, Match, Removal};
-use crate::compare::report::Thing::{Column, TableConstraint, Property, Routine, Schema, Sequence, Table, Trigger, View, ColumnPrivilege, TablePrivilege, RoutinePrivilege};
 
-pub struct CLI {}
+use crate::{compare, db};
+use crate::compare::report::PrivilegeComparison::{PrivilegeAdded, PrivilegeMaintained, PrivilegeRemoved};
+use crate::compare::report::{HasChanges, TableColumnReport, TableConstraintReport, SchemaReport, RoutineReport, SequenceReport, ViewReport, PropertyReport, PrivilegeReport, TableReport, TableTriggerReport};
+use crate::compare::report::PropertyComparison::{PropertyChanged, PropertyUnchanged};
+use crate::compare::report::RoutineComparison::{RoutineAdded, RoutineMaintained, RoutineRemoved};
+use crate::compare::report::SchemaComparison::{SchemaAdded, SchemaMaintained, SchemaMissing, SchemaRemoved};
+use crate::compare::report::SequenceComparison::{SequenceAdded, SequenceMaintained, SequenceRemoved};
+use crate::compare::report::TableColumnComparison::{ColumnAdded, ColumnMaintained, ColumnRemoved};
+use crate::compare::report::TableComparison::{TableAdded, TableMaintained, TableRemoved};
+use crate::compare::report::TableConstraintComparison::{ConstraintAdded, ConstraintMaintained, ConstraintRemoved};
+use crate::compare::report::TableTriggerComparison::{TriggerAdded, TriggerMaintained, TriggerRemoved};
+use crate::compare::report::ViewComparison::{ViewMaintained};
+
+pub struct CLI {
+    args: Args
+}
 
 impl CLI {
-    pub fn run() -> Result<ExitCode, Error> {
+    pub fn new() -> CLI {
         let args = Args::parse();
-
-        let left_db = db::Database::connect(args.left.as_str())?;
-        let right_db = db::Database::connect(args.right.as_str())?;
+        CLI { args }
+    }
+    
+    pub fn run(&self) -> Result<i32, Error> {
+        let left_db = db::Database::connect(self.args.left.as_str())?;
+        let right_db = db::Database::connect(self.args.right.as_str())?;
 
         let mut comparer = compare::Comparer::new(
             left_db,
             right_db,
-            args.ignore_whitespace,
-            args.ignore_column_ordinal,
-            args.ignore_privileges);
-        
-        let mut differences = false;
-        
-        for schema in args.schema {
-            let report = comparer.compare(schema.as_str())?;
+            self.args.ignore_whitespace,
+            self.args.ignore_column_ordinal,
+            self.args.ignore_privileges);
 
-            let entries = if args.verbose {
-                report.entries()
-            } else {
-                report.differences()
-            };
-            
-            for entry in entries.iter() {
-                match entry {
-                    Addition { path, thing: Column(name) } => println!("{}: column '{}' added", CLI::render_path(path), name),
-                    Addition { path, thing: ColumnPrivilege(privilege_type, grantor, grantee) } => println!("{}: privilege '{}' '{}' -> '{}' added", CLI::render_path(path), privilege_type, grantor, grantee),
-                    Addition { path, thing: Property(name) } => println!("{}: property '{}' added", CLI::render_path(path), name),
-                    Addition { path, thing: Routine(name) } => println!("{}: routine '{}' added", CLI::render_path(path), name),
-                    Addition { path, thing: RoutinePrivilege(privilege_type, grantor, grantee) } => println!("{}: privilege '{}' '{}' -> '{}' added", CLI::render_path(path), privilege_type, grantor, grantee),
-                    Addition { path, thing: Schema(name) } => println!("{}: schema '{}' added", CLI::render_path(path), name),
-                    Addition { path, thing: Sequence(name) } => println!("{}: sequence '{}' added", CLI::render_path(path), name),
-                    Addition { path, thing: Table(name) } => println!("{}: table '{}' added", CLI::render_path(path), name),
-                    Addition { path, thing: TableConstraint(name) } => println!("{}: constraint '{}' added", CLI::render_path(path), name),
-                    Addition { path, thing: TablePrivilege(privilege_type, grantor, grantee) } => println!("{}: privilege '{}' '{}' -> '{}' added", CLI::render_path(path), privilege_type, grantor, grantee),
-                    Addition { path, thing: Trigger(name, event) } => println!("{}: trigger '{}' ('{}') added", CLI::render_path(path), name, event),
-                    Addition { path, thing: View(name) } => println!("{}: view '{}' added", CLI::render_path(path), name),
-                    Removal { path, thing: Column(name) } => println!("{}: column '{}' removed", CLI::render_path(path), name),
-                    Removal { path, thing: ColumnPrivilege(privilege_type, grantor, grantee) } => println!("{}: privilege  '{}' '{}' -> '{}' removed", CLI::render_path(path), privilege_type, grantor, grantee),
-                    Removal { path, thing: Property(name) } => println!("{}: property '{}' removed", CLI::render_path(path), name),
-                    Removal { path, thing: Routine(name) } => println!("{}: routine '{}' removed", CLI::render_path(path), name),
-                    Removal { path, thing: RoutinePrivilege(privilege_type, grantor, grantee) } => println!("{}: privilege  '{}' '{}' -> '{}' removed", CLI::render_path(path), privilege_type, grantor, grantee),
-                    Removal { path, thing: Schema(name) } => println!("{}: schema '{}' removed", CLI::render_path(path), name),
-                    Removal { path, thing: Sequence(name) } => println!("{}: sequence '{}' removed", CLI::render_path(path), name),
-                    Removal { path, thing: Table(name) } => println!("{}: table '{}' removed", CLI::render_path(path), name),
-                    Removal { path, thing: TableConstraint(name) } => println!("{}: constraint '{}' removed", CLI::render_path(path), name),
-                    Removal { path, thing: TablePrivilege(privilege_type, grantor, grantee) } => println!("{}: privilege '{}' '{}' -> '{}' removed", CLI::render_path(path), privilege_type, grantor, grantee),
-                    Removal { path, thing: Trigger(name, event) } => println!("{}: trigger '{}' ('{}') removed", CLI::render_path(path), name, event),
-                    Removal { path, thing: View(name) } => println!("{}: view '{}' removed", CLI::render_path(path), name),
-                    Change { path, left_value, right_value } => println!("{}: changed from '{}' to '{}'", CLI::render_path(path), left_value, right_value),
-                    Match { path, left_value, right_value: _ } => println!("{}: unchanged from '{}'", CLI::render_path(path), left_value),
+        let mut differences = 0;
+
+        let report = comparer.compare(self.args.schema.clone())?;
+        differences += self.render_schema_report(report);
+
+        process::exit(differences);
+    }
+
+    fn render_schema_report(&self, report: SchemaReport) -> i32{
+        let mut differences = 0;
+
+        for schema in &report.entries {
+            match schema {
+                SchemaMissing { schema_name } => {
+                    println!("Schema '{}': missing", schema_name);
+                    differences += 1;
+                },
+                SchemaMaintained { schema_name, properties, routines, sequences, tables, views } => {
+                    if schema.has_changes() {
+                        println!("Schema '{}':", schema_name);
+                    }
+
+                    differences += self.render_property_report(properties, 1);
+                    differences += self.render_routine_report(routines);
+                    differences += self.render_sequence_report(sequences);
+                    differences += self.render_table_report(tables);
+                    differences += self.render_view_report(views);
+                }
+                SchemaAdded { schema_name } => {
+                    println!("Schema '{}': added", schema_name);
+                    differences += 1;
+                },
+                SchemaRemoved { schema_name } => {
+                    println!("Schema '{}': removed", schema_name);
+                    differences += 1;
                 }
             }
-            
-            differences = differences || report.has_differences();
         }
         
-        let exit_code = match differences {
-            true => ExitCode::FAILURE,
-            false => ExitCode::SUCCESS,
-        };
+        differences
+    }
 
-        return Ok(exit_code);
+    fn render_property_report(&self, report: &PropertyReport, depth: usize) -> i32 {
+        let mut differences = 0;
+        let margin = str::repeat("  ", depth);
+
+        for property in &report.entries {
+            match property {
+                PropertyChanged { property_name, left_value, right_value } => {
+                    println!("{}Property '{}': changed from '{}' to '{}'", margin, property_name, left_value, right_value);
+                    differences += 1;
+                }
+                PropertyUnchanged { property_name, value } => {
+                    if self.args.verbose {
+                        println!("{}Property '{}': unchanged at '{}'", margin, property_name, value);
+                    }
+                },
+            }
+        }
+        
+        differences
+    }
+
+    fn render_privilege_report(&self, report: &PrivilegeReport, depth: usize) -> i32 {
+        let mut differences = 0;
+        let margin = str::repeat("  ", depth);
+
+        for privilege in &report.entries {
+            match privilege {
+                PrivilegeAdded { privilege_name, grantor, grantee } => {
+                    println!("{}Privilege '{}' ({}->{}): added", margin, privilege_name, grantor, grantee);
+                    differences += 1;
+                }
+                PrivilegeRemoved { privilege_name, grantor, grantee } => {
+                    println!("{}Privilege '{}' ({}->{}): removed", margin, privilege_name, grantor, grantee);
+                    differences += 1;
+                },
+                PrivilegeMaintained { privilege_name, grantor, grantee } => {
+                    if self.args.verbose {
+                        println!("{}Privilege '{}' ({}->{}): unchanged", margin, privilege_name, grantor, grantee);
+                    }
+                },
+            }
+        }
+
+        differences
+    }
+
+    fn render_routine_report(&self, report: &RoutineReport) -> i32 {
+        let mut differences = 0;
+
+        for routine in &report.entries {
+            match routine {
+                RoutineMaintained { routine_signature, properties, privileges } => {
+                    if routine.has_changes() {
+                        println!("  Routine '{}':", routine_signature);
+                    }
+                    
+                    differences += self.render_property_report(&properties, 2);
+                    differences += self.render_privilege_report(&privileges, 2);
+                },
+                RoutineAdded { routine_signature } => {
+                    println!("  Routine '{}': added", routine_signature);
+                    differences += 1;
+                }
+                RoutineRemoved { routine_signature } => {
+                    println!("  Routine '{}': removed", routine_signature);
+                    differences += 1;
+                }
+            }
+        }
+        
+        differences
     }
     
-    //TODO this can be moved once we have a dedicated type for the path
-    pub fn render_path(path: &Vec<Thing>) -> String {
-        path.iter().map(|t| t.to_string()).collect::<Vec<String>>().join(": ")
+    fn render_sequence_report(&self, report: &SequenceReport) -> i32 {
+        let mut differences = 0;
+
+        for sequence in &report.entries {
+            match sequence {
+                SequenceMaintained { sequence_name, properties } => {
+                    if sequence.has_changes() {
+                        println!("  Sequence '{}':", sequence_name);
+                    }
+                    
+                    differences += self.render_property_report(&properties, 2);
+                },
+                SequenceAdded { sequence_name } => {
+                    println!("  Sequence '{}': added", sequence_name);
+                    differences += 1;
+                }
+                SequenceRemoved { sequence_name } => {
+                    println!("  Sequence '{}': removed", sequence_name);
+                    differences += 1;
+                }
+            }
+        }
+
+        differences
+    }
+    
+    fn render_table_report(&self, report: &TableReport) -> i32 {
+        let mut differences = 0;
+
+        for table in &report.entries {
+            match table {
+                TableMaintained { table_name, properties, columns, privileges, constraints, triggers } => {
+                    if table.has_changes() {
+                        println!("  Table '{}':", table_name);
+                    }
+                    
+                    differences += self.render_property_report(&properties, 2);
+                    differences += self.render_table_column_report(&columns);
+                    differences += self.render_privilege_report(&privileges, 2);
+                    differences += self.render_table_constraint_report(&constraints);
+                    differences += self.render_table_trigger_report(&triggers);
+                },
+                TableAdded { table_name } => {
+                    println!("  Table '{}': added", table_name);
+                    differences += 1;
+                }
+                TableRemoved { table_name } => {
+                    println!("  Table '{}': removed", table_name);
+                    differences += 1;
+                }
+            }
+        }
+
+        differences
+    }
+    
+    fn render_table_column_report(&self, report: &TableColumnReport) -> i32 {
+        let mut differences = 0;
+
+        for column in &report.entries {
+            match column {
+                ColumnMaintained { column_name, properties, privileges  } => {
+                    if column.has_changes() {
+                        println!("    Column '{}':", column_name);
+                    }
+
+                    differences += self.render_property_report(&properties, 3);
+                    differences += self.render_privilege_report(&privileges, 3);
+                },
+                ColumnAdded { column_name } => {
+                    println!("    Column '{}': added", column_name);
+                    differences += 1;
+                }
+                ColumnRemoved { column_name } => {
+                    println!("    Column '{}': removed", column_name);
+                    differences += 1;
+                }
+            }
+        }
+
+        differences
+    }
+    
+    fn render_table_constraint_report(&self, report: &TableConstraintReport) -> i32 {
+        let mut differences = 0;
+
+        for constraint in &report.entries {
+            match constraint {
+                ConstraintMaintained { constraint_name, properties  } => {
+                    if constraint.has_changes() {
+                        println!("    Constraint '{}':", constraint_name);
+                    }
+
+                    differences += self.render_property_report(&properties, 3);
+                },
+                ConstraintAdded { constraint_name } => {
+                    println!("    Constraint '{}': added", constraint_name);
+                    differences += 1;
+                }
+                ConstraintRemoved { constraint_name } => {
+                    println!("    Constraint '{}': removed", constraint_name);
+                    differences += 1;
+                }
+            }
+        }
+
+        differences
+    }
+
+    fn render_table_trigger_report(&self, report: &TableTriggerReport) -> i32 {
+        let mut differences = 0;
+
+        for trigger in &report.entries {
+            match trigger {
+                TriggerMaintained { trigger_name, event_manipulation, properties } => {
+                    if trigger.has_changes() {
+                        println!("    Trigger '{}' ({}):", trigger_name, event_manipulation);
+                    }
+
+                    differences += self.render_property_report(&properties, 3);
+                },
+                TriggerAdded { trigger_name, event_manipulation } => {
+                    println!("    Trigger '{}' ({}): added", trigger_name, event_manipulation);
+                    differences += 1;
+                }
+                TriggerRemoved { trigger_name, event_manipulation } => {
+                    println!("    Trigger '{}' ({}): removed", trigger_name, event_manipulation);
+                    differences += 1;
+                }
+            }
+        }
+
+        differences
+    }
+
+    fn render_view_report(&self, report: &ViewReport) -> i32 {
+        let mut differences = 0;
+
+        for view in &report.entries {
+            match view {
+                ViewMaintained { view_name, properties } => {
+                    if view.has_changes() {
+                        println!("  View '{}':", view_name);
+                    }
+
+                    differences += self.render_property_report(&properties, 2);
+                },
+            }
+        }
+
+        differences
     }
 }
 

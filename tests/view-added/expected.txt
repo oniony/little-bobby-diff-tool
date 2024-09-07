@@ -1,3 +1,2 @@
-schema 'test': table 'manager': column 'id' added
-schema 'test': table 'manager': column 'name' added
-schema 'test': table 'manager' added
+Schema 'test':
+  Table 'manager': added

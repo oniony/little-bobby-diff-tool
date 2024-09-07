@@ -1,7 +1,7 @@
 pub(crate) mod thing;
 
 use postgres::{Client, NoTls, Error};
-use crate::db::thing::{Column, ColumnPrivilege, Routine, RoutinePrivilege, Schema, Sequence, Table, TableConstraint, TablePrivilege, Trigger, View};
+use crate::db::thing::{Column, Privilege, Routine, Schema, Sequence, Table, TableConstraint, Trigger, View};
 
 pub struct Database {
     connection: Client
@@ -16,7 +16,7 @@ impl Database {
         })
     }
 
-    pub fn columns(&mut self, schema_name: &str) -> Result<Vec<Column>, Error> {
+    pub fn columns(&mut self, schema_name: &str, table_name: &str) -> Result<Vec<Column>, Error> {
         let mut columns = Vec::new();
 
         let rows = self.connection.query(r#"
@@ -39,11 +39,12 @@ SELECT
 FROM
     information_schema.columns
 WHERE
-    table_schema = $1
+    table_schema = $1 AND
+    table_name = $2
 ORDER BY
     table_name,
     column_name;"#,
-                                         &[&schema_name])?;
+                                         &[&schema_name, &table_name])?;
 
         for row in rows {
             let table_name: String = row.get(0);
@@ -86,21 +87,21 @@ ORDER BY
         Ok(columns)
     }
 
-    pub fn column_privileges(&mut self, schema_name: &str) -> Result<Vec<ColumnPrivilege>, Error> {
+    pub fn column_privileges(&mut self, schema_name: &str, table_name: &str, column_name: &str) -> Result<Vec<Privilege>, Error> {
         let mut column_privileges = Vec::new();
 
         let rows = self.connection.query(r#"
 SELECT
     grantor,
     grantee,
-    table_name,
-    column_name,
     privilege_type,
     is_grantable
 FROM
     information_schema.column_privileges
 WHERE
     table_schema = $1 AND
+    table_name = $2 AND
+    column_name = $3 AND
     grantor != grantee
 ORDER BY
     table_name,
@@ -108,23 +109,19 @@ ORDER BY
     privilege_type,
     grantor,
     grantee;"#,
-                                         &[&schema_name])?;
+                                         &[&schema_name, &table_name, &column_name])?;
 
         for row in rows {
             let grantor: String = row.get(0);
             let grantee: String = row.get(1);
-            let table_name: String = row.get(2);
-            let column_name: String = row.get(3);
-            let privilege_type: String = row.get(4);
-            let is_grantable: String = row.get(5);
+            let privilege_type: String = row.get(2);
+            let is_grantable: String = row.get(3);
 
-            let column_privilege = ColumnPrivilege {
+            let column_privilege = Privilege {
                 grantor,
                 grantee,
-                table_name,
-                column_name,
                 privilege_type,
-                is_grantable
+                is_grantable,
             };
 
             column_privileges.push(column_privilege.clone());
@@ -195,42 +192,51 @@ ORDER BY
         Ok(routines)
     }
 
-    pub fn routine_privileges(&mut self, schema_name: &str) -> Result<Vec<RoutinePrivilege>, Error> {
+    pub fn routine_privileges(&mut self, schema_name: &str, routine_signature: &str) -> Result<Vec<Privilege>, Error> {
         let mut routine_privileges = Vec::new();
 
         let rows = self.connection.query(r#"
+WITH schema_routines AS (
+    SELECT
+        rp.grantor,
+        rp.grantee,
+        rp.routine_name || '(' || COALESCE((
+            SELECT string_agg(COALESCE(p.parameter_name, '$' || p.ordinal_position) || ' ' || p.parameter_mode || ' ' || p.udt_schema || '.' || p.udt_name, ', ' order by p.ordinal_position)
+            FROM information_schema.parameters p
+            WHERE p.specific_name = rp.specific_name
+            GROUP BY p.specific_name
+        ), '') || ')' signature,
+        rp.privilege_type,
+        rp.is_grantable
+    FROM
+        information_schema.routine_privileges rp
+    WHERE
+        rp.routine_schema = $1 AND
+        rp.grantor != rp.grantee
+)
 SELECT
-    rp.grantor,
-    rp.grantee,
-    rp.routine_name || '(' || COALESCE((
-	    SELECT string_agg(COALESCE(p.parameter_name, '$' || p.ordinal_position) || ' ' || p.parameter_mode || ' ' || p.udt_schema || '.' || p.udt_name, ', ' order by p.ordinal_position)
-        FROM information_schema.parameters p
-        WHERE p.specific_name = rp.specific_name
-        GROUP BY p.specific_name
-    ), '') || ')' signature,
-    rp.privilege_type,
-    rp.is_grantable
+    grantor,
+    grantee,
+    privilege_type,
+    is_grantable
 FROM
-    information_schema.routine_privileges rp
+    schema_routines
 WHERE
-    rp.routine_schema = $1 AND
-    rp.grantor != rp.grantee
+    signature = $2
 ORDER BY
     signature,
     privilege_type;"#,
-                                         &[&schema_name])?;
+                                         &[&schema_name, &routine_signature])?;
 
         for row in rows {
             let grantor: String = row.get(0);
             let grantee: String = row.get(1);
-            let signature: String = row.get(2);
-            let privilege_type: String = row.get(3);
-            let is_grantable: String = row.get(4);
+            let privilege_type: String = row.get(2);
+            let is_grantable: String = row.get(3);
 
-            let routine_privilege = RoutinePrivilege {
+            let routine_privilege = Privilege {
                 grantor,
                 grantee,
-                signature,
                 privilege_type,
                 is_grantable,
             };
@@ -356,13 +362,12 @@ ORDER BY
         Ok(tables)
     }
 
-    pub fn table_constraints(&mut self, schema_name: &str) -> Result<Vec<TableConstraint>, Error> {
+    pub fn table_constraints(&mut self, schema_name: &str, table_name: &str) -> Result<Vec<TableConstraint>, Error> {
         let mut table_constraints = Vec::new();
 
         let rows = self.connection.query(r#"
 SELECT
     constraint_name,
-    table_name,
     constraint_type,
     is_deferrable,
     initially_deferred,
@@ -371,23 +376,22 @@ FROM
     information_schema.table_constraints
 WHERE
     table_schema = $1 AND
+    table_name = $2 AND
     constraint_type != 'CHECK'
 ORDER BY
     table_name,
     constraint_name;"#,
-                                         &[&schema_name])?;
+                                         &[&schema_name, &table_name])?;
 
         for row in rows {
             let constraint_name: String = row.get(0);
-            let table_name: String = row.get(1);
-            let constraint_type: String = row.get(2);
-            let is_deferrable: String = row.get(3);
-            let initially_deferred: String = row.get(4);
-            let nulls_distinct: Option<String> = row.get(5);
+            let constraint_type: String = row.get(1);
+            let is_deferrable: String = row.get(2);
+            let initially_deferred: String = row.get(3);
+            let nulls_distinct: Option<String> = row.get(4);
 
             let table_constraint = TableConstraint {
                 constraint_name,
-                table_name,
                 constraint_type,
                 is_deferrable,
                 initially_deferred,
@@ -400,44 +404,38 @@ ORDER BY
         Ok(table_constraints)
     }
 
-    pub fn table_privileges(&mut self, schema_name: &str) -> Result<Vec<TablePrivilege>, Error> {
+    pub fn table_privileges(&mut self, schema_name: &str, table_name: &str) -> Result<Vec<Privilege>, Error> {
         let mut table_privileges = Vec::new();
 
         let rows = self.connection.query(r#"
 SELECT
     grantor,
     grantee,
-    table_name,
     privilege_type,
-    is_grantable,
-    with_hierarchy
+    is_grantable
 FROM
     information_schema.table_privileges
 WHERE
     table_schema = $1 AND
+    table_name = $2 AND
     grantor != grantee
 ORDER BY
-    table_name,
     privilege_type,
     grantor,
     grantee;"#,
-                                         &[&schema_name])?;
+                                         &[&schema_name, &table_name])?;
 
         for row in rows {
             let grantor: String = row.get(0);
             let grantee: String = row.get(1);
-            let table_name: String = row.get(2);
-            let privilege_type: String = row.get(3);
-            let is_grantable: String = row.get(4);
-            let with_hierarchy: String = row.get(5);
+            let privilege_type: String = row.get(2);
+            let is_grantable: String = row.get(3);
 
-            let table_privilege = TablePrivilege {
+            let table_privilege = Privilege {
                 grantor,
                 grantee,
-                table_name,
                 privilege_type,
                 is_grantable,
-                with_hierarchy,
             };
 
             table_privileges.push(table_privilege.clone());
@@ -446,15 +444,13 @@ ORDER BY
         Ok(table_privileges)
     }
 
-    pub fn triggers(&mut self, schema_name: &str) -> Result<Vec<Trigger>, Error> {
+    pub fn triggers(&mut self, schema_name: &str, table_name: &str) -> Result<Vec<Trigger>, Error> {
         let mut triggers = Vec::new();
 
         let rows = self.connection.query(r#"
 SELECT
     trigger_name,
     event_manipulation,
-    event_object_schema,
-    event_object_table,
     action_order,
     action_condition,
     action_statement,
@@ -465,29 +461,27 @@ SELECT
 FROM
     information_schema.triggers
 WHERE
-    trigger_schema = $1
+    trigger_schema = $1 AND
+    event_object_schema = $1 AND
+    event_object_table = $2
 ORDER BY
     trigger_name, event_manipulation;"#,
-                                         &[&schema_name])?;
+                                         &[&schema_name, &table_name])?;
 
         for row in rows {
             let trigger_name: String = row.get(0);
             let event_manipulation: String = row.get(1);
-            let event_object_schema: String = row.get(2);
-            let event_object_table: String = row.get(3);
-            let action_order: i32 = row.get(4);
-            let action_condition: Option<String> = row.get(5);
-            let action_statement: String = row.get(6);
-            let action_orientation: String = row.get(7);
-            let action_timing: String = row.get(8);
-            let action_reference_old_table: Option<String> = row.get(9);
-            let action_reference_new_table: Option<String> = row.get(10);
+            let action_order: i32 = row.get(2);
+            let action_condition: Option<String> = row.get(3);
+            let action_statement: String = row.get(4);
+            let action_orientation: String = row.get(5);
+            let action_timing: String = row.get(6);
+            let action_reference_old_table: Option<String> = row.get(7);
+            let action_reference_new_table: Option<String> = row.get(8);
 
-            let sequence = Trigger {
+            let trigger = Trigger {
                 trigger_name,
                 event_manipulation,
-                event_object_schema,
-                event_object_table,
                 action_order,
                 action_condition,
                 action_statement,
@@ -497,7 +491,7 @@ ORDER BY
                 action_reference_new_table,
             };
 
-            triggers.push(sequence);
+            triggers.push(trigger);
         }
 
         Ok(triggers)

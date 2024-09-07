@@ -1,4 +1,7 @@
-schema 'test': table 'employee': column 'role_id': property 'is_nullable': changed from 'NO' to 'YES'
-schema 'test': table 'employee': column 'role_id': property 'data_type': changed from 'integer' to 'text'
-schema 'test': table 'employee': column 'role_id': property 'numeric_precision': changed from '32' to '<none>'
-schema 'test': table 'employee': column 'role_id': property 'numeric_scale': changed from '0' to '<none>'
+Schema 'test':
+  Table 'employee':
+    Column 'role_id':
+      Property 'is_nullable': changed from 'NO' to 'YES'
+      Property 'data_type': changed from 'integer' to 'text'
+      Property 'numeric_precision': changed from '32' to '<none>'
+      Property 'numeric_scale': changed from '0' to '<none>'

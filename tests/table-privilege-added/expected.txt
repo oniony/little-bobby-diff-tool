@@ -1,12 +1,17 @@
-schema 'test': table 'employee': column 'id': privilege 'INSERT' 'postgres' -> 'hagne' added
-schema 'test': table 'employee': column 'id': privilege 'SELECT' 'postgres' -> 'hagne' added
-schema 'test': table 'employee': column 'id': privilege 'UPDATE' 'postgres' -> 'hagne' added
-schema 'test': table 'employee': column 'name': privilege 'INSERT' 'postgres' -> 'hagne' added
-schema 'test': table 'employee': column 'name': privilege 'SELECT' 'postgres' -> 'hagne' added
-schema 'test': table 'employee': column 'name': privilege 'UPDATE' 'postgres' -> 'hagne' added
-schema 'test': table 'employee': column 'role_id': privilege 'INSERT' 'postgres' -> 'hagne' added
-schema 'test': table 'employee': column 'role_id': privilege 'SELECT' 'postgres' -> 'hagne' added
-schema 'test': table 'employee': column 'role_id': privilege 'UPDATE' 'postgres' -> 'hagne' added
-schema 'test': table 'employee': privilege 'INSERT' 'postgres' -> 'hagne' added
-schema 'test': table 'employee': privilege 'SELECT' 'postgres' -> 'hagne' added
-schema 'test': table 'employee': privilege 'UPDATE' 'postgres' -> 'hagne' added
+Schema 'test':
+  Table 'employee':
+    Column 'id':
+      Privilege 'INSERT' (postgres->hagne): added
+      Privilege 'SELECT' (postgres->hagne): added
+      Privilege 'UPDATE' (postgres->hagne): added
+    Column 'name':
+      Privilege 'INSERT' (postgres->hagne): added
+      Privilege 'SELECT' (postgres->hagne): added
+      Privilege 'UPDATE' (postgres->hagne): added
+    Column 'role_id':
+      Privilege 'INSERT' (postgres->hagne): added
+      Privilege 'SELECT' (postgres->hagne): added
+      Privilege 'UPDATE' (postgres->hagne): added
+    Privilege 'INSERT' (postgres->hagne): added
+    Privilege 'SELECT' (postgres->hagne): added
+    Privilege 'UPDATE' (postgres->hagne): added
