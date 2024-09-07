@@ -69,17 +69,21 @@ impl CLI {
                     differences += 1;
                 },
                 SchemaMaintained { schema_name, properties, routines, sequences, tables, views } => {
-                    if schema.has_changes() {
+                    let has_changes = schema.has_changes();
+                    
+                    if has_changes {
                         let message = format!("Schema '{}':", schema_name);
                         println!("{}", message.color(COLOUR_CHANGED));
-
+                    } else if self.args.verbose {
+                        println!("Schema '{}': unchanged", schema_name);
+                    }
+                    
+                    if has_changes || self.args.verbose {
                         differences += self.render_property_report(properties, 1);
                         differences += self.render_routine_report(routines);
                         differences += self.render_sequence_report(sequences);
                         differences += self.render_table_report(tables);
                         differences += self.render_view_report(views);
-                    } else if self.args.verbose {
-                        println!("Schema '{}': unchanged", schema_name);
                     }
                 }
                 SchemaAdded { schema_name } => {
@@ -158,14 +162,19 @@ impl CLI {
         for routine in &report.entries {
             match routine {
                 RoutineMaintained { routine_signature, properties, privileges } => {
-                    if routine.has_changes() {
+                    let has_changes = routine.has_changes();
+                    
+                    if has_changes {
                         let message = format!("  Routine '{}':", routine_signature);
                         println!("{}", message.color(COLOUR_CHANGED));
 
-                        differences += self.render_property_report(&properties, 2);
-                        differences += self.render_privilege_report(&privileges, 2);
                     } else if self.args.verbose {
                         println!("  Routine '{}': unchanged", routine_signature);
+                    }
+                    
+                    if has_changes || self.args.verbose {
+                        differences += self.render_property_report(&properties, 2);
+                        differences += self.render_privilege_report(&privileges, 2);
                     }
                 },
                 RoutineAdded { routine_signature } => {
@@ -192,13 +201,17 @@ impl CLI {
         for sequence in &report.entries {
             match sequence {
                 SequenceMaintained { sequence_name, properties } => {
-                    if sequence.has_changes() {
+                    let has_changes = sequence.has_changes();
+                    
+                    if has_changes {
                         let message = format!("  Sequence '{}':", sequence_name);
                         println!("{}", message.color(COLOUR_CHANGED));
-
-                        differences += self.render_property_report(&properties, 2);
                     } else if self.args.verbose {
                         println!("  Sequence '{}': unchanged", sequence_name);
+                    }
+                    
+                    if has_changes || self.args.verbose {
+                        differences += self.render_property_report(&properties, 2);
                     }
                 },
                 SequenceAdded { sequence_name } => {
@@ -225,17 +238,21 @@ impl CLI {
         for table in &report.entries {
             match table {
                 TableMaintained { table_name, properties, columns, privileges, constraints, triggers } => {
-                    if table.has_changes() {
+                    let has_changes = table.has_changes();
+                    
+                    if has_changes {
                         let message = format!("  Table '{}':", table_name);
                         println!("{}", message.color(COLOUR_CHANGED));
-                        
+                    } else if self.args.verbose {
+                        println!("  Table '{}': unchanged", table_name);
+                    }
+                    
+                    if has_changes || self.args.verbose {
                         differences += self.render_property_report(&properties, 2);
                         differences += self.render_table_column_report(&columns);
                         differences += self.render_privilege_report(&privileges, 2);
                         differences += self.render_table_constraint_report(&constraints);
                         differences += self.render_table_trigger_report(&triggers);
-                    } else if self.args.verbose {
-                        println!("  Table '{}': unchanged", table_name);
                     }
                 },
                 TableAdded { table_name } => {
@@ -262,10 +279,16 @@ impl CLI {
         for column in &report.entries {
             match column {
                 ColumnMaintained { column_name, properties, privileges  } => {
-                    if column.has_changes() {
+                    let has_changes = column.has_changes();
+                    
+                    if has_changes {
                         let message = format!("    Column '{}':", column_name);
                         println!("{}", message.color(COLOUR_CHANGED));
-
+                    } else if self.args.verbose {
+                        println!("    Column '{}': unchanged", column_name);
+                    }
+                    
+                    if has_changes || self.args.verbose {
                         differences += self.render_property_report(&properties, 3);
                         differences += self.render_privilege_report(&privileges, 3);
                     }
@@ -294,13 +317,17 @@ impl CLI {
         for constraint in &report.entries {
             match constraint {
                 ConstraintMaintained { constraint_name, properties  } => {
-                    if constraint.has_changes() {
+                    let has_changes = constraint.has_changes();
+                    
+                    if has_changes {
                         let message = format!("    Constraint '{}':", constraint_name);
                         println!("{}", message.color(COLOUR_CHANGED));
-
-                        differences += self.render_property_report(&properties, 3);
                     } else if self.args.verbose {
                         println!("    Constraint '{}': unchanged", constraint_name);
+                    }
+                    
+                    if has_changes || self.args.verbose {
+                        differences += self.render_property_report(&properties, 3);
                     }
                 },
                 ConstraintAdded { constraint_name } => {
@@ -327,13 +354,17 @@ impl CLI {
         for trigger in &report.entries {
             match trigger {
                 TriggerMaintained { trigger_name, event_manipulation, properties } => {
-                    if trigger.has_changes() {
+                    let has_changes = trigger.has_changes();
+                    
+                    if has_changes {
                         let message = format!("    Trigger '{}' ({}):", trigger_name, event_manipulation);
                         println!("{}", message.color(COLOUR_CHANGED));
-
-                        differences += self.render_property_report(&properties, 3);
                     } else if self.args.verbose {
                         println!("    Trigger '{}' ({}): unchanged", trigger_name, event_manipulation);
+                    }
+                    
+                    if has_changes || self.args.verbose {
+                        differences += self.render_property_report(&properties, 3);
                     }
                 },
                 TriggerAdded { trigger_name, event_manipulation } => {
@@ -360,13 +391,17 @@ impl CLI {
         for view in &report.entries {
             match view {
                 ViewMaintained { view_name, properties } => {
-                    if view.has_changes() {
+                    let has_changes = view.has_changes();
+                    
+                    if has_changes {
                         let message = format!("  View '{}':", view_name);
                         println!("{}", message.color(COLOUR_CHANGED));
-
-                        differences += self.render_property_report(&properties, 2);
                     } else if self.args.verbose {
                         println!("  View '{}': unchanged", view_name);
+                    }
+                    
+                    if has_changes || self.args.verbose {
+                        differences += self.render_property_report(&properties, 2);
                     }
                 },
             }
