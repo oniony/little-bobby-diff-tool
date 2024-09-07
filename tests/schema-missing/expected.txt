@@ -1,1 +1,1 @@
-Schema 'test_missing': missing
+Schema 'test_missing': missing in both
