@@ -1,20 +1,33 @@
+mod args;
+
 use std::process;
-use clap::{Parser, ValueEnum};
+use clap::{Parser};
 use colored::Colorize;
 use postgres::Error;
 
 use crate::{compare, db};
-use crate::compare::report::PrivilegeComparison::{PrivilegeAdded, PrivilegeMaintained, PrivilegeRemoved};
-use crate::compare::report::{HasChanges, TableColumnReport, TableConstraintReport, SchemaReport, RoutineReport, SequenceReport, ViewReport, PropertyReport, PrivilegeReport, TableReport, TableTriggerReport};
-use crate::compare::report::PropertyComparison::{PropertyChanged, PropertyUnchanged};
-use crate::compare::report::RoutineComparison::{RoutineAdded, RoutineMaintained, RoutineRemoved};
-use crate::compare::report::SchemaComparison::{SchemaAdded, SchemaMaintained, SchemaMissing, SchemaRemoved};
-use crate::compare::report::SequenceComparison::{SequenceAdded, SequenceMaintained, SequenceRemoved};
-use crate::compare::report::TableColumnComparison::{ColumnAdded, ColumnMaintained, ColumnRemoved};
-use crate::compare::report::TableComparison::{TableAdded, TableMaintained, TableRemoved};
-use crate::compare::report::TableConstraintComparison::{ConstraintAdded, ConstraintMaintained, ConstraintRemoved};
-use crate::compare::report::TableTriggerComparison::{TriggerAdded, TriggerMaintained, TriggerRemoved};
-use crate::compare::report::ViewComparison::{ViewMaintained};
+use crate::cli::args::{Args, Colouring::Always, Colouring::Never};
+use crate::compare::report::{HasChanges, Report};
+use crate::compare::report::privilege::PrivilegeComparison;
+use crate::compare::report::privilege::PrivilegeComparison::{PrivilegeAdded, PrivilegeMaintained, PrivilegeRemoved};
+use crate::compare::report::property::PropertyComparison;
+use crate::compare::report::property::PropertyComparison::{PropertyChanged, PropertyUnchanged};
+use crate::compare::report::routine::RoutineComparison;
+use crate::compare::report::routine::RoutineComparison::{RoutineAdded, RoutineMaintained, RoutineRemoved};
+use crate::compare::report::schema::SchemaComparison;
+use crate::compare::report::schema::SchemaComparison::{SchemaAdded, SchemaMaintained, SchemaMissing, SchemaRemoved};
+use crate::compare::report::sequence::SequenceComparison;
+use crate::compare::report::sequence::SequenceComparison::{SequenceAdded, SequenceMaintained, SequenceRemoved};
+use crate::compare::report::table::TableComparison;
+use crate::compare::report::table::TableComparison::{TableAdded, TableMaintained, TableRemoved};
+use crate::compare::report::table_column::TableColumnComparison;
+use crate::compare::report::table_column::TableColumnComparison::{ColumnAdded, ColumnMaintained, ColumnRemoved};
+use crate::compare::report::table_constraint::TableConstraintComparison;
+use crate::compare::report::table_constraint::TableConstraintComparison::{ConstraintAdded, ConstraintMaintained, ConstraintRemoved};
+use crate::compare::report::table_trigger::TableTriggerComparison::{TriggerAdded, TriggerMaintained, TriggerRemoved};
+use crate::compare::report::table_trigger::{TableTriggerComparison};
+use crate::compare::report::view::ViewComparison;
+use crate::compare::report::view::ViewComparison::ViewMaintained;
 
 const COLOUR_ADDED: colored::Color = colored::Color::Green;
 const COLOUR_CHANGED: colored::Color= colored::Color::Yellow;
@@ -30,8 +43,8 @@ impl CLI {
         let args = Args::parse();
         
         match args.color {
-            Colouring::Always => colored::control::set_override(true),
-            Colouring::Never => colored::control::set_override(false),
+            Always => colored::control::set_override(true),
+            Never => colored::control::set_override(false),
             _ => (),
         }
         
@@ -57,7 +70,7 @@ impl CLI {
         process::exit(differences);
     }
 
-    fn render_schema_report(&self, report: SchemaReport) -> i32{
+    fn render_schema_report(&self, report: Report<SchemaComparison>) -> i32{
         let mut differences = 0;
 
         for schema in &report.entries {
@@ -104,7 +117,7 @@ impl CLI {
         differences
     }
 
-    fn render_property_report(&self, report: &PropertyReport, depth: usize) -> i32 {
+    fn render_property_report(&self, report: &Report<PropertyComparison>, depth: usize) -> i32 {
         let mut differences = 0;
         let margin = str::repeat("  ", depth);
 
@@ -127,7 +140,7 @@ impl CLI {
         differences
     }
 
-    fn render_privilege_report(&self, report: &PrivilegeReport, depth: usize) -> i32 {
+    fn render_privilege_report(&self, report: &Report<PrivilegeComparison>, depth: usize) -> i32 {
         let mut differences = 0;
         let margin = str::repeat("  ", depth);
 
@@ -156,7 +169,7 @@ impl CLI {
         differences
     }
 
-    fn render_routine_report(self: &Self, report: &RoutineReport) -> i32 {
+    fn render_routine_report(&self, report: &Report<RoutineComparison>) -> i32 {
         let mut differences = 0;
 
         for routine in &report.entries {
@@ -195,7 +208,7 @@ impl CLI {
         differences
     }
     
-    fn render_sequence_report(&self, report: &SequenceReport) -> i32 {
+    fn render_sequence_report(&self, report: &Report<SequenceComparison>) -> i32 {
         let mut differences = 0;
 
         for sequence in &report.entries {
@@ -232,7 +245,7 @@ impl CLI {
         differences
     }
     
-    fn render_table_report(&self, report: &TableReport) -> i32 {
+    fn render_table_report(&self, report: &Report<TableComparison>) -> i32 {
         let mut differences = 0;
 
         for table in &report.entries {
@@ -273,7 +286,7 @@ impl CLI {
         differences
     }
     
-    fn render_table_column_report(&self, report: &TableColumnReport) -> i32 {
+    fn render_table_column_report(&self, report: &Report<TableColumnComparison>) -> i32 {
         let mut differences = 0;
 
         for column in &report.entries {
@@ -311,7 +324,7 @@ impl CLI {
         differences
     }
     
-    fn render_table_constraint_report(&self, report: &TableConstraintReport) -> i32 {
+    fn render_table_constraint_report(&self, report: &Report<TableConstraintComparison>) -> i32 {
         let mut differences = 0;
 
         for constraint in &report.entries {
@@ -348,7 +361,7 @@ impl CLI {
         differences
     }
 
-    fn render_table_trigger_report(&self, report: &TableTriggerReport) -> i32 {
+    fn render_table_trigger_report(&self, report: &Report<TableTriggerComparison>) -> i32 {
         let mut differences = 0;
 
         for trigger in &report.entries {
@@ -385,7 +398,7 @@ impl CLI {
         differences
     }
 
-    fn render_view_report(&self, report: &ViewReport) -> i32 {
+    fn render_view_report(&self, report: &Report<ViewComparison>) -> i32 {
         let mut differences = 0;
 
         for view in &report.entries {
@@ -409,39 +422,4 @@ impl CLI {
 
         differences
     }
-}
-
-#[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
-pub struct Args {
-    #[arg(short, long, short = 'l', help = "The left database URL")]
-    left: String,
-
-    #[arg(short, long, short = 'r', help = "The right database URL")]
-    right: String,
-
-    #[arg(short, long, required = true, short = 's', help = "Schema to compare")]
-    schema: Vec<String>,
-
-    #[arg(short, long, short = 'w', help = "Ignore routine whitespace differences")]
-    ignore_whitespace: bool,
-
-    #[arg(short, long, short = 'o', help = "Ignore column ordering differences")]
-    ignore_column_ordinal: bool,
-
-    #[arg(short, long, short = 'p', help = "Ignore privilege changes")]
-    ignore_privileges: bool,
-
-    #[arg(short, long, short = 'v', help = "Show matches")]
-    verbose: bool,
-    
-    #[arg(short, long, short = 'c', alias = "colour", help = "Use colour", default_value = "auto")]
-    color: Colouring,
-}
-
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]
-enum Colouring {
-    Auto,
-    Always,
-    Never,
 }

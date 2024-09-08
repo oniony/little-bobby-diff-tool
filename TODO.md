@@ -1,1 +1,1 @@
-* [ ] Get integration tests to snapshot database
+* [ ] Split into lib and executable
