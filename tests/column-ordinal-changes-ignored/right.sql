@@ -1,10 +1,5 @@
 CREATE TABLE employee (
-	id integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    role_id integer NOT NULL,
 	name text NOT NULL,
-    role_id integer NOT NULL);
+	id integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY);
 
-CREATE ROLE melitodes;
-
-GRANT SELECT (name), INSERT (name), UPDATE (name)
-ON TABLE employee
-TO melitodes;

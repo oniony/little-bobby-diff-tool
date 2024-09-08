@@ -16,7 +16,7 @@ CREATE TABLE column_changed (
 	b text NOT NULL
 );
 
--- column ordering changed
+-- column ordinal changed
 
 CREATE TABLE column_ordering_changed (
 	a integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
