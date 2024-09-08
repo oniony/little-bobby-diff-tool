@@ -103,8 +103,9 @@ impl Comparer {
                     entries.push(RoutineRemoved { routine_signature: left_routine.signature });
                 },
                 Some(rr) => {
-                    let left_routine_privileges = left_routine_privileges_by_signature.get(&left_routine.signature).unwrap();
-                    let right_routine_privileges = right_routine_privileges_by_signature.get(&left_routine.signature).unwrap();
+                    let no_privileges = Vec::new();
+                    let left_routine_privileges = left_routine_privileges_by_signature.get(&left_routine.signature).unwrap_or(&no_privileges);
+                    let right_routine_privileges = right_routine_privileges_by_signature.get(&left_routine.signature).unwrap_or(&no_privileges);
                     
                     let properties = self.compare_routine_properties(&left_routine, rr);
                     let privileges = self.compare_routine_privileges(left_routine_privileges, right_routine_privileges)?;
