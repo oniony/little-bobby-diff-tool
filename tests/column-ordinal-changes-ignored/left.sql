@@ -3,4 +3,3 @@ CREATE TABLE employee (
 	name text NOT NULL,
     role_id integer NOT NULL);
 
-CREATE ROLE melitodes;

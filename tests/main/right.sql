@@ -17,7 +17,7 @@ CREATE TABLE column_changed (
 	b integer NULL
 );
 
--- column ordering changed
+-- column ordinal changed
 
 CREATE TABLE column_ordering_changed (
 	b text NOT NULL,
