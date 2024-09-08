@@ -89,6 +89,9 @@ impl Comparer {
         let left_routines = self.left_db.routines(schema_name)?;
         let right_routines = self.right_db.routines(schema_name)?;
 
+        let left_routine_privileges_by_signature = self.left_db.routine_privileges(schema_name)?;
+        let right_routine_privileges_by_signature = self.right_db.routine_privileges(schema_name)?;
+        
         let mut right_routines_map: HashMap<String, Routine> = right_routines.into_iter().map(|t| (t.signature.clone(), t)).collect();
         let mut entries = Vec::new();
 
@@ -100,8 +103,11 @@ impl Comparer {
                     entries.push(RoutineRemoved { routine_signature: left_routine.signature });
                 },
                 Some(rr) => {
+                    let left_routine_privileges = left_routine_privileges_by_signature.get(&left_routine.signature).unwrap();
+                    let right_routine_privileges = right_routine_privileges_by_signature.get(&left_routine.signature).unwrap();
+                    
                     let properties = self.compare_routine_properties(&left_routine, rr);
-                    let privileges = self.compare_routine_privileges(schema_name, &left_routine.signature)?;
+                    let privileges = self.compare_routine_privileges(left_routine_privileges, right_routine_privileges)?;
 
                     entries.push(RoutineMaintained { routine_signature: left_routine.signature, properties, privileges });
 
@@ -143,19 +149,16 @@ impl Comparer {
         }
     }
 
-    fn compare_routine_privileges(&mut self, schema_name: &str, routine_signature: &str) -> Result<Report<PrivilegeComparison>, Error> {
+    fn compare_routine_privileges(&mut self, left_routine_privileges: &Vec<Privilege>, right_routine_privileges: &Vec<Privilege>) -> Result<Report<PrivilegeComparison>, Error> {
         if self.ignore_privileges {
             return Ok(Report { entries: vec![] })
         }
 
-        let left_routine_privileges = self.left_db.routine_privileges(schema_name, routine_signature)?;
-        let right_routine_privileges = self.right_db.routine_privileges(schema_name, routine_signature)?;
-
         Ok(self.compare_privileges(left_routine_privileges, right_routine_privileges))
     }
 
-    fn compare_privileges(&self, left_privileges: Vec<Privilege>, right_privileges: Vec<Privilege>) -> Report<PrivilegeComparison> {
-        let mut right_privileges_map: HashMap<(String, String, String), Privilege> = right_privileges.into_iter().map(|c| ((c.privilege_type.clone(), c.grantor.clone(), c.grantee.clone()), c)).collect();
+    fn compare_privileges(&self, left_privileges: &Vec<Privilege>, right_privileges: &Vec<Privilege>) -> Report<PrivilegeComparison> {
+        let mut right_privileges_map: HashMap<(String, String, String), &Privilege> = right_privileges.into_iter().map(|c| ((c.privilege_type.clone(), c.grantor.clone(), c.grantee.clone()), c)).collect();
         let mut entries = Vec::new();
 
         for left_privilege in left_privileges {
@@ -173,7 +176,7 @@ impl Comparer {
         }
 
         if right_privileges_map.len() > 0 {
-            let mut added_privileges: Vec<&Privilege> = right_privileges_map.values().collect();
+            let mut added_privileges: Vec<&&Privilege> = right_privileges_map.values().collect();
             added_privileges.sort_unstable_by_key(|rp| (&rp.privilege_type, &rp.grantor, &rp.grantee));
 
             for added_privilege in added_privileges {
@@ -293,7 +296,7 @@ impl Comparer {
         let left_table_privileges = self.left_db.table_privileges(schema_name, table_name)?;
         let right_table_privileges = self.right_db.table_privileges(schema_name, table_name)?;
 
-        Ok(self.compare_privileges(left_table_privileges, right_table_privileges))
+        Ok(self.compare_privileges(&left_table_privileges, &right_table_privileges))
     }
 
     fn compare_table_columns(&mut self, schema_name: &str, table_name: &str) -> Result<Report<TableColumnComparison>, Error> {
@@ -365,7 +368,7 @@ impl Comparer {
         let left_column_privileges = self.left_db.column_privileges(schema_name, table_name, column_name)?;
         let right_column_privileges = self.right_db.column_privileges(schema_name, table_name, column_name)?;
 
-        Ok(self.compare_privileges(left_column_privileges, right_column_privileges))
+        Ok(self.compare_privileges(&left_column_privileges, &right_column_privileges))
     }
 
     fn compare_table_constraints(&mut self, schema_name: &str, table_name: &str) -> Result<Report<TableConstraintComparison>, Error> {

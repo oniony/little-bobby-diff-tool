@@ -1,1 +1,0 @@
-Schema 'test_removed': removed

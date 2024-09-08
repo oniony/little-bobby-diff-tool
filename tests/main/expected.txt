@@ -1,0 +1,137 @@
+Schema 'test':
+  Routine 'routine_changed(a IN pg_catalog.int4, b IN pg_catalog.text)':
+    Property 'routine_definition': changed from '
+INSERT INTO routine (a, b)
+VALUES (a, b);
+' to '
+INSERT INTO routine (a, b)
+VALUES (a + 100, b);
+'
+  Routine 'routine_privilege_added(a IN pg_catalog.int4, b IN pg_catalog.text)':
+    Privilege 'EXECUTE' (postgres->routine_privilege_added_role): added
+  Routine 'routine_privilege_removed(a IN pg_catalog.int4, b IN pg_catalog.text)':
+    Privilege 'EXECUTE' (postgres->routine_privilege_removed_role): removed
+  Routine 'routine_removed(a IN pg_catalog.int4, b IN pg_catalog.text)': removed
+  Routine 'routine_whitespace_changed(a IN pg_catalog.int4, b IN pg_catalog.text)':
+    Property 'routine_definition': changed from '
+INSERT INTO routine (a, b)
+VALUES (a, b);
+' to '
+	INSERT INTO
+		routine (a, b)
+	VALUES
+		(a, b);
+'
+  Routine 'routine_added(a IN pg_catalog.int4, b IN pg_catalog.text)': added
+  Routine 'routine_added_with_unnamed_parameters($1 IN pg_catalog.int4, $2 IN pg_catalog.text)': added
+  Routine 'trigger_exception()': added
+  Sequence 'sequence_changed':
+    Property 'data_type': changed from 'integer' to 'bigint'
+    Property 'numeric_precision': changed from '32' to '64'
+    Property 'start_value': changed from '44' to '30'
+    Property 'minimum_value': changed from '10' to '30'
+    Property 'maximum_value': changed from '100' to '99'
+    Property 'increment': changed from '2' to '3'
+    Property 'cycle_option': changed from 'YES' to 'NO'
+  Sequence 'sequence_removed': removed
+  Sequence 'sequence_added': added
+  Table 'column_added':
+    Column 'c': added
+  Table 'column_changed':
+    Column 'b':
+      Property 'is_nullable': changed from 'NO' to 'YES'
+      Property 'data_type': changed from 'text' to 'integer'
+      Property 'numeric_precision': changed from '<none>' to '32'
+      Property 'numeric_scale': changed from '<none>' to '0'
+  Table 'column_ordering_changed':
+    Column 'a':
+      Property 'ordinal_position': changed from '1' to '2'
+    Column 'b':
+      Property 'ordinal_position': changed from '2' to '1'
+  Table 'column_privilege_added':
+    Column 'a':
+      Privilege 'INSERT' (postgres->column_privilege_added_role): added
+      Privilege 'SELECT' (postgres->column_privilege_added_role): added
+      Privilege 'UPDATE' (postgres->column_privilege_added_role): added
+  Table 'column_privilege_removed':
+    Column 'a':
+      Privilege 'INSERT' (postgres->column_privilege_removed_role): removed
+      Privilege 'SELECT' (postgres->column_privilege_removed_role): removed
+      Privilege 'UPDATE' (postgres->column_privilege_removed_role): removed
+  Table 'column_removed':
+    Column 'b': removed
+  Table 'table_changed':
+    Property 'table_type': changed from 'BASE TABLE' to 'VIEW'
+    Property 'is_insertable_into': changed from 'YES' to 'NO'
+    Column 'a':
+      Property 'is_nullable': changed from 'NO' to 'YES'
+      Property 'is_identity': changed from 'YES' to 'NO'
+      Property 'identity_generation': changed from 'ALWAYS' to '<none>'
+      Property 'is_updatable': changed from 'YES' to 'NO'
+    Column 'b':
+      Property 'is_nullable': changed from 'NO' to 'YES'
+      Property 'is_updatable': changed from 'YES' to 'NO'
+    Constraint 'table_changed_pkey': removed
+  Table 'table_constraint_added':
+    Constraint 'fk_table_constraint_added': added
+  Table 'table_constraint_changed':
+    Constraint 'my_constraint':
+      Property 'constraint_type': changed from 'PRIMARY KEY' to 'FOREIGN KEY'
+  Table 'table_constraint_removed':
+    Constraint 'fk_table_constraint_removed': removed
+  Table 'table_privilege_added':
+    Column 'a':
+      Privilege 'INSERT' (postgres->table_privilege_added_role): added
+      Privilege 'SELECT' (postgres->table_privilege_added_role): added
+      Privilege 'UPDATE' (postgres->table_privilege_added_role): added
+    Column 'id':
+      Privilege 'INSERT' (postgres->table_privilege_added_role): added
+      Privilege 'SELECT' (postgres->table_privilege_added_role): added
+      Privilege 'UPDATE' (postgres->table_privilege_added_role): added
+    Privilege 'INSERT' (postgres->table_privilege_added_role): added
+    Privilege 'SELECT' (postgres->table_privilege_added_role): added
+    Privilege 'UPDATE' (postgres->table_privilege_added_role): added
+  Table 'table_privilege_removed':
+    Column 'a':
+      Privilege 'INSERT' (postgres->table_privilege_removed_role): removed
+      Privilege 'SELECT' (postgres->table_privilege_removed_role): removed
+      Privilege 'UPDATE' (postgres->table_privilege_removed_role): removed
+    Column 'id':
+      Privilege 'INSERT' (postgres->table_privilege_removed_role): removed
+      Privilege 'SELECT' (postgres->table_privilege_removed_role): removed
+      Privilege 'UPDATE' (postgres->table_privilege_removed_role): removed
+    Privilege 'INSERT' (postgres->table_privilege_removed_role): removed
+    Privilege 'SELECT' (postgres->table_privilege_removed_role): removed
+    Privilege 'UPDATE' (postgres->table_privilege_removed_role): removed
+  Table 'table_removed': removed
+  Table 'trigger_table':
+    Trigger 'trigger_changed' (DELETE): removed
+    Trigger 'trigger_changed' (INSERT):
+      Property 'action_order': changed from '1' to '2'
+      Property 'action_condition': changed from '<none>' to '(new.a = 666)'
+      Property 'action_statement': changed from 'EXECUTE FUNCTION test.trigger_noop()' to 'EXECUTE FUNCTION test.trigger_exception()'
+    Trigger 'trigger_changed' (UPDATE):
+      Property 'action_order': changed from '1' to '2'
+      Property 'action_condition': changed from '<none>' to '(new.a = 666)'
+      Property 'action_statement': changed from 'EXECUTE FUNCTION test.trigger_noop()' to 'EXECUTE FUNCTION test.trigger_exception()'
+    Trigger 'trigger_removed' (DELETE): removed
+    Trigger 'trigger_removed' (INSERT): removed
+    Trigger 'trigger_removed' (UPDATE): removed
+    Trigger 'trigger_added' (DELETE): added
+    Trigger 'trigger_added' (INSERT): added
+    Trigger 'trigger_added' (UPDATE): added
+  Table 'view_changed':
+    Column 'seven': added
+  Table 'view_removed': removed
+  Table 'table_added': added
+  Table 'view_added': added
+  View 'view_changed':
+    Property 'view_definition': changed from ' SELECT id,
+    a AS name
+   FROM test.view_table
+  WHERE (id = 6);' to ' SELECT a AS id,
+    id AS name,
+    7 AS seven
+   FROM test.view_table
+  WHERE (a > 10)
+  ORDER BY id;'

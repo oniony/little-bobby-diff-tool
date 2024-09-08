@@ -1,6 +1,0 @@
-Schema 'test':
-  Table 'employee':
-    Column 'name':
-      Privilege 'INSERT' (postgres->persephone): added
-      Privilege 'SELECT' (postgres->persephone): added
-      Privilege 'UPDATE' (postgres->persephone): added

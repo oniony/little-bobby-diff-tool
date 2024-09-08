@@ -1,2 +1,0 @@
-Schema 'test':
-  Sequence 'department_id': removed

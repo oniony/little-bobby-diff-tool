@@ -1,3 +1,0 @@
-Schema 'test':
-  Table 'employee':
-    Constraint 'employee_name_key': removed
