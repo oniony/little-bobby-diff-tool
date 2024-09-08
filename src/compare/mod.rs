@@ -1,24 +1,32 @@
-pub(crate) mod report;
-
 use std::collections::HashMap;
-use std::fmt::{Display};
+use std::fmt::Display;
 use postgres::Error;
-use SchemaComparison::{SchemaAdded, SchemaMissing};
-use crate::compare::report::{PropertyComparison, SchemaComparison, TableColumnReport, TableConstraintReport, SchemaReport, PropertyReport, RoutineReport, PrivilegeReport, SequenceReport, TableReport, ViewReport, TableTriggerReport};
-use crate::{db};
-use crate::compare::report::PrivilegeComparison::{PrivilegeAdded, PrivilegeMaintained, PrivilegeRemoved};
-use crate::compare::report::PropertyComparison::{PropertyChanged, PropertyUnchanged};
-use crate::compare::report::RoutineComparison::{RoutineAdded, RoutineMaintained, RoutineRemoved};
-use crate::compare::report::SchemaComparison::{SchemaMaintained, SchemaRemoved};
-use crate::compare::report::SequenceComparison::{SequenceAdded, SequenceMaintained, SequenceRemoved};
-use crate::compare::report::TableColumnComparison::{ColumnAdded, ColumnMaintained, ColumnRemoved};
-use crate::compare::report::TableComparison::{TableAdded, TableMaintained, TableRemoved};
-use crate::compare::report::TableConstraintComparison::{ConstraintAdded, ConstraintMaintained, ConstraintRemoved};
-use crate::compare::report::TableTriggerComparison::{TriggerAdded, TriggerMaintained, TriggerRemoved};
-use crate::compare::report::ViewComparison::ViewMaintained;
-use crate::db::{Database};
-use crate::db::thing::{Privilege, Schema};
-use crate::string::{EqualIgnoreWhitespace};
+use crate::compare::report::privilege::PrivilegeComparison;
+use crate::compare::report::privilege::PrivilegeComparison::{PrivilegeAdded, PrivilegeMaintained, PrivilegeRemoved};
+use crate::compare::report::property::PropertyComparison;
+use crate::compare::report::property::PropertyComparison::{PropertyChanged, PropertyUnchanged};
+use crate::compare::report::Report;
+use crate::compare::report::routine::RoutineComparison;
+use crate::compare::report::routine::RoutineComparison::{RoutineAdded, RoutineMaintained, RoutineRemoved};
+use crate::compare::report::schema::SchemaComparison;
+use crate::compare::report::schema::SchemaComparison::{SchemaAdded, SchemaMaintained, SchemaMissing, SchemaRemoved};
+use crate::compare::report::sequence::SequenceComparison;
+use crate::compare::report::sequence::SequenceComparison::{SequenceAdded, SequenceMaintained, SequenceRemoved};
+use crate::compare::report::table::TableComparison;
+use crate::compare::report::table::TableComparison::{TableAdded, TableMaintained, TableRemoved};
+use crate::compare::report::table_column::TableColumnComparison;
+use crate::compare::report::table_column::TableColumnComparison::{ColumnAdded, ColumnMaintained, ColumnRemoved};
+use crate::compare::report::table_constraint::TableConstraintComparison;
+use crate::compare::report::table_constraint::TableConstraintComparison::{ConstraintAdded, ConstraintMaintained, ConstraintRemoved};
+use crate::compare::report::table_trigger::TableTriggerComparison;
+use crate::compare::report::table_trigger::TableTriggerComparison::{TriggerAdded, TriggerMaintained, TriggerRemoved};
+use crate::compare::report::view::ViewComparison;
+use crate::compare::report::view::ViewComparison::ViewMaintained;
+use crate::db::Database;
+use crate::db::thing::{Column, Constraint, Privilege, Routine, Schema, Sequence, Table, Trigger, View};
+use crate::string::EqualIgnoreWhitespace;
+
+pub mod report;
 
 pub struct Comparer {
     left_db: Database,
@@ -39,25 +47,20 @@ impl Comparer {
         }
     }
 
-    pub fn compare(&mut self, schemas: Vec<String>) -> Result<SchemaReport, Error> {
-        let left_schemas = self.left_db.schemas()?;
-        let right_schemas = self.right_db.schemas()?;
-
+    pub fn compare(&mut self, schemas: Vec<String>) -> Result<Report<SchemaComparison>, Error> {
         let mut entries = Vec::new();
-        
-        for schema in schemas {
-            let left_schema = left_schemas.iter().find(|s| s.schema_name == schema);
-            let right_schema = right_schemas.iter().find(|s| s.schema_name == schema);
 
-            let entry: SchemaComparison;
+        for schema in schemas {
+            let left_schema = self.left_db.schema(&schema)?;
+            let right_schema = self.right_db.schema(&schema)?;
 
             if left_schema.is_none() && right_schema.is_none() {
-                entry = SchemaMissing { schema_name: String::from(schema) };
+                entries.push(SchemaMissing { schema_name: String::from(schema) });
             } else {
                 if left_schema.is_none() {
-                    entry = SchemaAdded { schema_name: String::from(schema) };
+                    entries.push(SchemaAdded { schema_name: String::from(schema) });
                 } else if right_schema.is_none() {
-                    entry = SchemaRemoved { schema_name: String::from(schema) };
+                    entries.push(SchemaRemoved { schema_name: String::from(schema) });
                 } else {
                     let properties = self.compare_schema_properties(&left_schema.unwrap(), &right_schema.unwrap());
 
@@ -66,29 +69,27 @@ impl Comparer {
                     let tables = self.compare_tables(&schema)?;
                     let views = self.compare_views(&schema)?;
 
-                    entry = SchemaMaintained { schema_name: String::from(schema), properties, routines, sequences, tables, views };
+                    entries.push(SchemaMaintained { schema_name: String::from(schema), properties, routines, sequences, tables, views });
                 }
             }
-            
-            entries.push(entry)
         }
 
-        Ok(SchemaReport { entries })
+        Ok(Report { entries })
     }
 
-    fn compare_schema_properties(&self, left_schema: &Schema, right_schema: &Schema) -> PropertyReport {
-        PropertyReport {
+    fn compare_schema_properties(&self, left_schema: &Schema, right_schema: &Schema) -> Report<PropertyComparison> {
+        Report {
             entries: vec![
                 self.compare_property("schema_owner", &left_schema.schema_owner, &right_schema.schema_owner)
             ]
         }
     }
 
-    fn compare_routines(&mut self, schema_name: &str) -> Result<RoutineReport, Error> {
+    fn compare_routines(&mut self, schema_name: &str) -> Result<Report<RoutineComparison>, Error> {
         let left_routines = self.left_db.routines(schema_name)?;
         let right_routines = self.right_db.routines(schema_name)?;
 
-        let mut right_routines_map: HashMap<String, db::thing::Routine> = right_routines.into_iter().map(|t| (t.signature.clone(), t)).collect();
+        let mut right_routines_map: HashMap<String, Routine> = right_routines.into_iter().map(|t| (t.signature.clone(), t)).collect();
         let mut entries = Vec::new();
 
         for left_routine in left_routines {
@@ -110,7 +111,7 @@ impl Comparer {
         }
 
         if right_routines_map.len() > 0 {
-            let mut added_routines: Vec<&db::thing::Routine> = right_routines_map.values().collect();
+            let mut added_routines: Vec<&Routine> = right_routines_map.values().collect();
             added_routines.sort_unstable_by_key(|r| &r.signature);
 
             for right_routine in added_routines {
@@ -118,11 +119,11 @@ impl Comparer {
             }
         }
 
-        Ok(RoutineReport { entries })
+        Ok(Report { entries })
     }
 
-    fn compare_routine_properties(&self, left: &db::thing::Routine, right: &db::thing::Routine) -> PropertyReport {
-        PropertyReport {
+    fn compare_routine_properties(&self, left: &Routine, right: &Routine) -> Report<PropertyComparison> {
+        Report {
             entries: vec![
                 self.compare_option_property("routine_type", &left.routine_type, &right.routine_type),
                 self.compare_option_property("data_type", &left.data_type, &right.data_type),
@@ -142,9 +143,9 @@ impl Comparer {
         }
     }
 
-    fn compare_routine_privileges(&mut self, schema_name: &str, routine_signature: &str) -> Result<PrivilegeReport, Error> {
+    fn compare_routine_privileges(&mut self, schema_name: &str, routine_signature: &str) -> Result<Report<PrivilegeComparison>, Error> {
         if self.ignore_privileges {
-            return Ok(PrivilegeReport { entries: vec![] })
+            return Ok(Report { entries: vec![] })
         }
 
         let left_routine_privileges = self.left_db.routine_privileges(schema_name, routine_signature)?;
@@ -153,7 +154,7 @@ impl Comparer {
         Ok(self.compare_privileges(left_routine_privileges, right_routine_privileges))
     }
 
-    fn compare_privileges(&self, left_privileges: Vec<Privilege>, right_privileges: Vec<Privilege>) -> PrivilegeReport {
+    fn compare_privileges(&self, left_privileges: Vec<Privilege>, right_privileges: Vec<Privilege>) -> Report<PrivilegeComparison> {
         let mut right_privileges_map: HashMap<(String, String, String), Privilege> = right_privileges.into_iter().map(|c| ((c.privilege_type.clone(), c.grantor.clone(), c.grantee.clone()), c)).collect();
         let mut entries = Vec::new();
 
@@ -180,14 +181,14 @@ impl Comparer {
             }
         }
 
-        PrivilegeReport { entries }
+        Report { entries }
     }
 
-    fn compare_sequences(&mut self, schema_name: &str) -> Result<SequenceReport, Error> {
+    fn compare_sequences(&mut self, schema_name: &str) -> Result<Report<SequenceComparison>, Error> {
         let left_sequences = self.left_db.sequences(schema_name)?;
         let right_sequences = self.right_db.sequences(schema_name)?;
 
-        let mut right_sequences_map: HashMap<String, db::thing::Sequence> = right_sequences.into_iter().map(|t| (t.sequence_name.clone(), t)).collect();
+        let mut right_sequences_map: HashMap<String, Sequence> = right_sequences.into_iter().map(|t| (t.sequence_name.clone(), t)).collect();
         let mut entries = Vec::new();
 
         for left_sequence in left_sequences {
@@ -208,7 +209,7 @@ impl Comparer {
         }
 
         if right_sequences_map.len() > 0 {
-            let mut added_sequences: Vec<&db::thing::Sequence> = right_sequences_map.values().collect();
+            let mut added_sequences: Vec<&Sequence> = right_sequences_map.values().collect();
             added_sequences.sort_unstable_by_key(|s| &s.sequence_name);
 
             for right_sequence in added_sequences {
@@ -216,11 +217,11 @@ impl Comparer {
             }
         }
 
-        Ok(SequenceReport { entries })
+        Ok(Report { entries })
     }
 
-    fn compare_sequence_properties(&self, left: &db::thing::Sequence, right: &db::thing::Sequence) -> PropertyReport {
-        PropertyReport {
+    fn compare_sequence_properties(&self, left: &Sequence, right: &Sequence) -> Report<PropertyComparison> {
+        Report {
             entries: vec![
                 self.compare_property("data_type", &left.data_type, &right.data_type),
                 self.compare_property("numeric_precision", &left.numeric_precision, &right.numeric_precision),
@@ -235,11 +236,11 @@ impl Comparer {
         }
     }
 
-    fn compare_tables(&mut self, schema_name: &str) -> Result<TableReport, Error> {
+    fn compare_tables(&mut self, schema_name: &str) -> Result<Report<TableComparison>, Error> {
         let left_tables = self.left_db.tables(schema_name)?;
         let right_tables = self.right_db.tables(schema_name)?;
 
-        let mut right_tables_map: HashMap<String, db::thing::Table> = right_tables.into_iter().map(|t| (t.table_name.clone(), t)).collect();
+        let mut right_tables_map: HashMap<String, Table> = right_tables.into_iter().map(|t| (t.table_name.clone(), t)).collect();
         let mut entries = Vec::new();
 
         for left_table in left_tables {
@@ -264,7 +265,7 @@ impl Comparer {
         }
 
         if right_tables_map.len() > 0 {
-            let mut added_tables: Vec<&db::thing::Table> = right_tables_map.values().collect();
+            let mut added_tables: Vec<&Table> = right_tables_map.values().collect();
             added_tables.sort_unstable_by_key(|t| &t.table_name);
 
             for right_table in added_tables {
@@ -272,11 +273,11 @@ impl Comparer {
             }
         }
 
-        Ok(TableReport { entries })
+        Ok(Report { entries })
     }
 
-    fn compare_table_properties(&self, left: &db::thing::Table, right: &db::thing::Table) -> PropertyReport {
-        PropertyReport {
+    fn compare_table_properties(&self, left: &Table, right: &Table) -> Report<PropertyComparison> {
+        Report {
             entries: vec![
                 self.compare_property("table_type", &left.table_type, &right.table_type),
                 self.compare_property("is_insertable_into", &left.is_insertable_into, &right.is_insertable_into),
@@ -284,28 +285,28 @@ impl Comparer {
         }
     }
 
-    fn compare_table_privileges(&mut self, schema_name: &str, table_name: &str) -> Result<PrivilegeReport, Error> {
+    fn compare_table_privileges(&mut self, schema_name: &str, table_name: &str) -> Result<Report<PrivilegeComparison>, Error> {
         if self.ignore_privileges {
-            return Ok(PrivilegeReport { entries: vec![] })
+            return Ok(Report { entries: vec![] })
         }
 
         let left_table_privileges = self.left_db.table_privileges(schema_name, table_name)?;
         let right_table_privileges = self.right_db.table_privileges(schema_name, table_name)?;
-    
+
         Ok(self.compare_privileges(left_table_privileges, right_table_privileges))
     }
 
-    fn compare_table_columns(&mut self, schema_name: &str, table_name: &str) -> Result<TableColumnReport, Error> {
+    fn compare_table_columns(&mut self, schema_name: &str, table_name: &str) -> Result<Report<TableColumnComparison>, Error> {
         let left_columns = self.left_db.columns(schema_name, table_name)?;
         let right_columns = self.right_db.columns(schema_name, table_name)?;
-    
-        let mut right_columns_map : HashMap<String, db::thing::Column> = right_columns.into_iter().map(|c| (c.column_name.clone(), c)).collect();
+
+        let mut right_columns_map : HashMap<String, Column> = right_columns.into_iter().map(|c| (c.column_name.clone(), c)).collect();
         let mut entries = Vec::new();
-    
+
         for left_column in left_columns {
             let key = left_column.column_name.clone();
             let right_column = right_columns_map.get_mut(&key);
-    
+
             match right_column {
                 None => {
                     entries.push(ColumnRemoved { column_name: left_column.column_name.clone() });
@@ -315,25 +316,25 @@ impl Comparer {
                     let privileges = self.compare_table_column_privileges(schema_name, table_name, &rc.column_name)?;
 
                     entries.push(ColumnMaintained { column_name: rc.column_name.clone(), properties, privileges });
-                    
+
                     right_columns_map.remove(&key);
                 },
             }
         }
-    
+
         if right_columns_map.len() > 0 {
-            let mut added_columns : Vec<&db::thing::Column> = right_columns_map.values().collect();
+            let mut added_columns : Vec<&Column> = right_columns_map.values().collect();
             added_columns.sort_unstable_by_key(|c| &c.column_name);
-            
+
             for right_column in added_columns {
                 entries.push(ColumnAdded { column_name: right_column.column_name.clone() });
             }
         }
-    
-        Ok(TableColumnReport { entries })
+
+        Ok(Report { entries })
     }
 
-    fn compare_table_column_properties(&self, left: &db::thing::Column, right: &db::thing::Column) -> PropertyReport {
+    fn compare_table_column_properties(&self, left: &Column, right: &Column) -> Report<PropertyComparison> {
         let mut properties = vec![
             self.compare_option_property("column_default", &left.column_default, &right.column_default),
             self.compare_property("is_nullable", &left.is_nullable, &right.is_nullable),
@@ -348,17 +349,17 @@ impl Comparer {
             self.compare_option_property("generation_expression", &left.generation_expression, &right.generation_expression),
             self.compare_property("is_updatable", &left.is_updatable, &right.is_updatable),
         ];
-    
+
         if !self.ignore_column_ordinal {
             properties.push(self.compare_property("ordinal_position", &left.ordinal_position, &right.ordinal_position));
         }
-        
-        PropertyReport { entries: properties }
+
+        Report { entries: properties }
     }
-    
-    fn compare_table_column_privileges(&mut self, schema_name: &str, table_name: &str, column_name: &str) -> Result<PrivilegeReport, Error> {
+
+    fn compare_table_column_privileges(&mut self, schema_name: &str, table_name: &str, column_name: &str) -> Result<Report<PrivilegeComparison>, Error> {
         if self.ignore_privileges {
-            return Ok(PrivilegeReport { entries: vec![] })
+            return Ok(Report { entries: vec![] })
         }
 
         let left_column_privileges = self.left_db.column_privileges(schema_name, table_name, column_name)?;
@@ -366,46 +367,46 @@ impl Comparer {
 
         Ok(self.compare_privileges(left_column_privileges, right_column_privileges))
     }
-    
-    fn compare_table_constraints(&mut self, schema_name: &str, table_name: &str) -> Result<TableConstraintReport, Error> {
+
+    fn compare_table_constraints(&mut self, schema_name: &str, table_name: &str) -> Result<Report<TableConstraintComparison>, Error> {
         let left_table_constraints = self.left_db.table_constraints(schema_name, table_name)?;
         let right_table_constraints = self.right_db.table_constraints(schema_name, table_name)?;
-    
-        let mut right_table_constraints_map : HashMap<String, db::thing::TableConstraint> = right_table_constraints.into_iter().map(|t| (t.constraint_name.clone(), t)).collect();
+
+        let mut right_table_constraints_map : HashMap<String, Constraint> = right_table_constraints.into_iter().map(|t| (t.constraint_name.clone(), t)).collect();
         let mut entries = Vec::new();
-    
+
         for left_table_constraint in left_table_constraints {
             let key = left_table_constraint.constraint_name.clone();
             let right_table_constraint = right_table_constraints_map.get(&key);
-    
+
             match right_table_constraint {
                 None => {
                     entries.push(ConstraintRemoved { constraint_name: left_table_constraint.constraint_name });
                 },
                 Some(rtc) => {
                     let properties = self.compare_table_constraint(&left_table_constraint, rtc);
-                    
+
                     entries.push(ConstraintMaintained { constraint_name: rtc.constraint_name.clone(), properties });
-    
+
                     right_table_constraints_map.remove(&key);
                 },
             }
         }
-    
+
         if right_table_constraints_map.len() > 0 {
-            let mut added_table_constraints : Vec<&db::thing::TableConstraint> = right_table_constraints_map.values().collect();
+            let mut added_table_constraints : Vec<&Constraint> = right_table_constraints_map.values().collect();
             added_table_constraints.sort_unstable_by_key(|tc| &tc.constraint_name);
-            
+
             for right_table_constraint in added_table_constraints {
                 entries.push(ConstraintAdded { constraint_name: right_table_constraint.constraint_name.clone() });
             }
         }
-    
-        Ok(TableConstraintReport { entries })
+
+        Ok(Report { entries })
     }
-    
-    fn compare_table_constraint(&mut self, left: &db::thing::TableConstraint, right: &db::thing::TableConstraint) -> PropertyReport {
-        PropertyReport {
+
+    fn compare_table_constraint(&mut self, left: &Constraint, right: &Constraint) -> Report<PropertyComparison> {
+        Report {
             entries: vec![
                 self.compare_property("constraint_type", &left.constraint_type, &right.constraint_type),
                 self.compare_property("is_deferrable", &left.is_deferrable, &right.is_deferrable),
@@ -415,45 +416,45 @@ impl Comparer {
         }
     }
 
-    fn compare_table_triggers(&mut self, schema_name: &str, table_name: &str) -> Result<TableTriggerReport, Error> {
+    fn compare_table_triggers(&mut self, schema_name: &str, table_name: &str) -> Result<Report<TableTriggerComparison>, Error> {
         let left_triggers = self.left_db.triggers(schema_name, table_name)?;
         let right_triggers = self.right_db.triggers(schema_name, table_name)?;
-    
-        let mut right_triggers_map : HashMap<(String, String), db::thing::Trigger> = right_triggers.into_iter().map(|t| ((t.trigger_name.clone(), t.event_manipulation.clone()), t)).collect();
+
+        let mut right_triggers_map : HashMap<(String, String), Trigger> = right_triggers.into_iter().map(|t| ((t.trigger_name.clone(), t.event_manipulation.clone()), t)).collect();
         let mut entries = Vec::new();
-    
+
         for left_trigger in left_triggers {
             let key = &(left_trigger.trigger_name.clone(), left_trigger.event_manipulation.clone());
             let right_trigger = right_triggers_map.get(&key);
-    
+
             match right_trigger {
                 None => {
                     entries.push(TriggerRemoved { trigger_name: left_trigger.trigger_name, event_manipulation: left_trigger.event_manipulation });
                 },
                 Some(rt) => {
                     let properties = self.compare_trigger_properties(&left_trigger, rt);
-                    
+
                     entries.push(TriggerMaintained { trigger_name: rt.trigger_name.clone(), event_manipulation: rt.event_manipulation.clone(), properties });
-    
+
                     right_triggers_map.remove(key);
                 },
             }
         }
-    
+
         if right_triggers_map.len() > 0 {
-            let mut added_triggers : Vec<&db::thing::Trigger> = right_triggers_map.values().collect();
+            let mut added_triggers : Vec<&Trigger> = right_triggers_map.values().collect();
             added_triggers.sort_unstable_by_key(|t| (&t.trigger_name, &t.event_manipulation));
-            
+
             for right_trigger in added_triggers {
                 entries.push(TriggerAdded { trigger_name: right_trigger.trigger_name.clone(), event_manipulation: right_trigger.event_manipulation.clone() });
             }
         }
-    
-        Ok(TableTriggerReport { entries })
+
+        Ok(Report { entries })
     }
-    
-    fn compare_trigger_properties(&mut self, left: &db::thing::Trigger, right: &db::thing::Trigger) -> PropertyReport {
-        PropertyReport {
+
+    fn compare_trigger_properties(&mut self, left: &Trigger, right: &Trigger) -> Report<PropertyComparison> {
+        Report {
             entries: vec![
                 self.compare_property("action_order", &left.action_order, &right.action_order),
                 self.compare_option_property("action_condition", &left.action_condition, &right.action_condition),
@@ -466,16 +467,16 @@ impl Comparer {
         }
     }
 
-    fn compare_views(&mut self, schema_name: &str) -> Result<ViewReport, Error> {
+    fn compare_views(&mut self, schema_name: &str) -> Result<Report<ViewComparison>, Error> {
         let left_views = self.left_db.views(schema_name)?;
         let right_views = self.right_db.views(schema_name)?;
-    
-        let right_views_map: HashMap<String, db::thing::View> = right_views.into_iter().map(|t| (t.view_name.clone(), t)).collect();
+
+        let right_views_map: HashMap<String, View> = right_views.into_iter().map(|t| (t.view_name.clone(), t)).collect();
         let mut entries = Vec::new();
-    
+
         for left_view in left_views {
             let right_view = right_views_map.get(&left_view.view_name);
-    
+
             match right_view {
                 None => {
                     // already detected by table comparison
@@ -483,19 +484,19 @@ impl Comparer {
                 },
                 Some(rv) => {
                     let properties = self.compare_view_properties(&left_view, rv);
-                    
+
                     entries.push(ViewMaintained { view_name: rv.view_name.clone(), properties });
                 }
             }
         }
-    
+
         // added already detected by table comparison
-    
-        Ok(ViewReport { entries })
+
+        Ok(Report { entries })
     }
-    
-    fn compare_view_properties(&mut self, left: &db::thing::View, right: &db::thing::View) -> PropertyReport {
-        PropertyReport {
+
+    fn compare_view_properties(&mut self, left: &View, right: &View) -> Report<PropertyComparison> {
+        Report {
             entries: vec![
                 self.compare_option_property("view_definition", &left.view_definition, &right.view_definition),
                 self.compare_property("check_option", &left.check_option, &right.check_option),
@@ -532,14 +533,14 @@ impl Comparer {
         if left_value.is_none() && right_value.is_none() {
             return PropertyUnchanged { property_name: String::from(property_name), value: String::from("<none>") }
         }
-        
+
         if left_value.is_none() || right_value.is_none() {
             return PropertyChanged { property_name: String::from(property_name), left_value: left_value.as_ref().map_or(String::from("<none>"), |v| v.to_string()), right_value: right_value.as_ref().map_or(String::from("<none>"), |v| v.to_string()) };
         }
-        
+
         let left = left_value.as_ref().unwrap();
         let right = right_value.as_ref().unwrap();
-    
+
         if compare(left, right) {
             PropertyUnchanged { property_name: String::from(property_name), value: left.to_string() }
         } else {

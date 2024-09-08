@@ -1,6 +1,5 @@
 #[derive(Clone, PartialEq)]
 pub struct Column {
-    pub table_name: String,
     pub column_name: String,
     pub ordinal_position: i32,
     pub column_default: Option<String>,
@@ -68,7 +67,7 @@ pub struct Table {
 }
 
 #[derive(Clone, PartialEq)]
-pub struct TableConstraint {
+pub struct Constraint {
     pub constraint_name: String,
     pub constraint_type: String,
     pub is_deferrable: String,
