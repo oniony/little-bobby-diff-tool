@@ -1,9 +1,0 @@
-Schema 'test':
-  Sequence 'department_id':
-    Property 'data_type': changed from 'integer' to 'bigint'
-    Property 'numeric_precision': changed from '32' to '64'
-    Property 'start_value': changed from '44' to '30'
-    Property 'minimum_value': changed from '10' to '30'
-    Property 'maximum_value': changed from '100' to '99'
-    Property 'increment': changed from '2' to '3'
-    Property 'cycle_option': changed from 'YES' to 'NO'

@@ -1,5 +1,0 @@
-Schema 'test':
-  Table 'employee':
-    Trigger 'employee_added' (DELETE): added
-    Trigger 'employee_added' (INSERT): added
-    Trigger 'employee_added' (UPDATE): added

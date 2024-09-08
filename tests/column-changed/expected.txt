@@ -1,7 +1,0 @@
-Schema 'test':
-  Table 'employee':
-    Column 'role_id':
-      Property 'is_nullable': changed from 'NO' to 'YES'
-      Property 'data_type': changed from 'integer' to 'text'
-      Property 'numeric_precision': changed from '32' to '<none>'
-      Property 'numeric_scale': changed from '0' to '<none>'

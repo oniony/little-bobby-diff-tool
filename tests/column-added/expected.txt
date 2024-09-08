@@ -1,3 +1,0 @@
-Schema 'test':
-  Table 'employee':
-    Column 'age': added

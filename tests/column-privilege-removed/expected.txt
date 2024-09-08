@@ -1,6 +1,0 @@
-Schema 'test':
-  Table 'employee':
-    Column 'name':
-      Privilege 'INSERT' (postgres->despoina): removed
-      Privilege 'SELECT' (postgres->despoina): removed
-      Privilege 'UPDATE' (postgres->despoina): removed

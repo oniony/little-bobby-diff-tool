@@ -1,8 +1,0 @@
-Schema 'test':
-  Routine 'create_employee(name IN pg_catalog.int4, role_id IN pg_catalog.int4)':
-    Property 'routine_definition': changed from '
-INSERT INTO employee (name, role_id)
-VALUES (name, role_id);
-' to '
-   INSERT INTO employee (name, role_id) VALUES (name, role_id); 
-'

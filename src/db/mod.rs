@@ -1,5 +1,6 @@
 pub mod thing;
 
+use std::collections::HashMap;
 use postgres::{Client, NoTls, Error};
 use crate::db::thing::{Column, Constraint, Privilege, Routine, Schema, Sequence, Table, Trigger, View};
 
@@ -189,11 +190,10 @@ ORDER BY
         Ok(routines)
     }
 
-    pub fn routine_privileges(&mut self, schema_name: &str, routine_signature: &str) -> Result<Vec<Privilege>, Error> {
-        let mut routine_privileges = Vec::new();
+    pub fn routine_privileges(&mut self, schema_name: &str) -> Result<HashMap<String, Vec<Privilege>>, Error> {
+        let mut privilegess_by_signature = HashMap::new();
 
         let rows = self.connection.query(r#"
-WITH schema_routines AS (
     SELECT
         rp.grantor,
         rp.grantee,
@@ -210,27 +210,22 @@ WITH schema_routines AS (
     WHERE
         rp.routine_schema = $1 AND
         rp.grantor != rp.grantee
-)
-SELECT
-    grantor,
-    grantee,
-    privilege_type,
-    is_grantable
-FROM
-    schema_routines
-WHERE
-    signature = $2
-ORDER BY
-    signature,
-    privilege_type;"#,
-                                         &[&schema_name, &routine_signature])?;
+    ORDER BY
+        signature,
+        privilege_type;"#,
+                                         &[&schema_name])?;
 
         for row in rows {
             let grantor: String = row.get(0);
             let grantee: String = row.get(1);
-            let privilege_type: String = row.get(2);
-            let is_grantable: String = row.get(3);
+            let signature: String = row.get(2);
+            let privilege_type: String = row.get(3);
+            let is_grantable: String = row.get(4);
 
+            let routine_privileges = privilegess_by_signature
+                .entry(signature)
+                .or_insert_with(|| Vec::new());
+            
             let routine_privilege = Privilege {
                 grantor,
                 grantee,
@@ -241,7 +236,7 @@ ORDER BY
             routine_privileges.push(routine_privilege);
         }
 
-        Ok(routine_privileges)
+        Ok(privilegess_by_signature)
     }
 
     pub fn schema(&mut self, schema_name: &str) -> Result<Option<Schema>, Error> {

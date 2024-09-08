@@ -1,4 +1,0 @@
-Schema 'test':
-  Table 'employee':
-    Constraint 'employee_name_key': added
-    Constraint 'fk_test': added
