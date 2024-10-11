@@ -4,7 +4,7 @@ pub mod privilege;
 pub mod routine;
 pub mod sequence;
 pub mod table;
-pub mod table_column;
+pub mod column;
 pub mod table_constraint;
 pub mod table_trigger;
 pub mod view;

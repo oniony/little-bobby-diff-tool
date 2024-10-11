@@ -41,8 +41,11 @@ VALUES (a, b);
     Column 'b':
       Property 'is_nullable': changed from 'NO' to 'YES'
       Property 'data_type': changed from 'text' to 'integer'
+      Property 'character_octet_length': changed from '1073741824' to '<none>'
       Property 'numeric_precision': changed from '<none>' to '32'
+      Property 'numeric_precision_radix': changed from '<none>' to '2'
       Property 'numeric_scale': changed from '<none>' to '0'
+      Property 'udt_name': changed from 'text' to 'int4'
   Table 'column_ordering_changed':
     Column 'a':
       Property 'ordinal_position': changed from '1' to '2'
@@ -67,6 +70,10 @@ VALUES (a, b);
       Property 'is_nullable': changed from 'NO' to 'YES'
       Property 'is_identity': changed from 'YES' to 'NO'
       Property 'identity_generation': changed from 'ALWAYS' to '<none>'
+      Property 'identity_start': changed from '1' to '<none>'
+      Property 'identity_increment': changed from '1' to '<none>'
+      Property 'identity_maximum': changed from '2147483647' to '<none>'
+      Property 'identity_minimum': changed from '1' to '<none>'
       Property 'is_updatable': changed from 'YES' to 'NO'
     Column 'b':
       Property 'is_nullable': changed from 'NO' to 'YES'
@@ -133,5 +140,4 @@ VALUES (a, b);
     id AS name,
     7 AS seven
    FROM test.view_table
-  WHERE (a > 10)
-  ORDER BY id;'
+  WHERE (a > 10);'

@@ -1,8 +1,6 @@
-version: '2'
-
 services:
   left:
-    image: postgres
+    image: postgres:latest
     container_name: postgres-left
     environment:
       - POSTGRES_PASSWORD=postgres
@@ -10,7 +8,7 @@ services:
       - 8901:5432
     restart: unless-stopped
   right:
-    image: postgres
+    image: postgres:latest
     container_name: postgres-right
     environment:
       - POSTGRES_PASSWORD=postgres

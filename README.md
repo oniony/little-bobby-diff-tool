@@ -6,10 +6,19 @@
 
 Little Bobby Diff Tool is a CLI tool to compare database schemas.
 
-It currently compares the following across one or more schemas.
+RDBMS support:
+
+- [ ] MySQL
+- [ ] Oracle
+- [X] PostgreSQL
+- [ ] SQLite
+- [ ] SQL Server
+
+Items compared:
 
 - [X] Columns
 - [X] Column Privileges
+- [ ] Indices
 - [X] Routines
 - [X] Routine Privileges
 - [X] Sequences
