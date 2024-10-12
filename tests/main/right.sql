@@ -328,8 +328,7 @@ AS SELECT id, a
 CREATE VIEW view_changed (id, name)
 AS SELECT a, id, 7 as seven
 	FROM view_table
-	WHERE a > 10
-	ORDER BY id;
+	WHERE a > 10;
 
 -- view removed
 

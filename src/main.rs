@@ -6,15 +6,16 @@ mod string;
 use std::process;
 use crate::cli::CLI;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let cli = CLI::new();
-    let result = cli.run();
+    let result = cli.run().await;
 
     match result {
-        Ok(count) => process::exit(count),
-        Err(err) => {
-            eprintln!("{}", err);
-            process::exit(-1);
-        },
-    }
+         Ok(count) => process::exit(count),
+         Err(err) => {
+             eprintln!("{}", err);
+             process::exit(-1);
+         },
+     }
 }

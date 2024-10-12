@@ -3,7 +3,7 @@ mod args;
 use std::process;
 use clap::{Parser};
 use colored::Colorize;
-use postgres::Error;
+use sqlx::Error;
 
 use crate::{compare, db};
 use crate::cli::args::{Args, Colouring::Always, Colouring::Never};
@@ -20,8 +20,8 @@ use crate::compare::report::sequence::SequenceComparison;
 use crate::compare::report::sequence::SequenceComparison::{SequenceAdded, SequenceMaintained, SequenceRemoved};
 use crate::compare::report::table::TableComparison;
 use crate::compare::report::table::TableComparison::{TableAdded, TableMaintained, TableRemoved};
-use crate::compare::report::table_column::TableColumnComparison;
-use crate::compare::report::table_column::TableColumnComparison::{ColumnAdded, ColumnMaintained, ColumnRemoved};
+use crate::compare::report::column::ColumnComparison;
+use crate::compare::report::column::ColumnComparison::{ColumnAdded, ColumnMaintained, ColumnRemoved};
 use crate::compare::report::table_constraint::TableConstraintComparison;
 use crate::compare::report::table_constraint::TableConstraintComparison::{ConstraintAdded, ConstraintMaintained, ConstraintRemoved};
 use crate::compare::report::table_trigger::TableTriggerComparison::{TriggerAdded, TriggerMaintained, TriggerRemoved};
@@ -51,9 +51,9 @@ impl CLI {
         CLI { args }
     }
     
-    pub fn run(&self) -> Result<i32, Error> {
-        let left_db = db::Database::connect(self.args.left.as_str())?;
-        let right_db = db::Database::connect(self.args.right.as_str())?;
+    pub async fn run(&self) -> Result<i32, Error> {
+        let left_db = db::Database::connect(self.args.left.as_str()).await?;
+        let right_db = db::Database::connect(self.args.right.as_str()).await?;
 
         let mut comparer = compare::Comparer::new(
             left_db,
@@ -64,7 +64,7 @@ impl CLI {
 
         let mut differences = 0;
 
-        let report = comparer.compare(self.args.schema.clone())?;
+        let report = comparer.compare(self.args.schema.clone()).await?;
         differences += self.render_schema_report(report);
 
         process::exit(differences);
@@ -286,7 +286,7 @@ impl CLI {
         differences
     }
     
-    fn render_table_column_report(&self, report: &Report<TableColumnComparison>) -> i32 {
+    fn render_table_column_report(&self, report: &Report<ColumnComparison>) -> i32 {
         let mut differences = 0;
 
         for column in &report.entries {
