@@ -1,5 +1,6 @@
 pub mod column;
 pub mod column_privilege;
+pub mod index;
 pub mod privilege;
 pub mod routine;
 pub mod routine_privilege;
@@ -14,6 +15,7 @@ pub mod view;
 use sqlx::{Connection, Error, PgConnection};
 use crate::db::column::Column;
 use crate::db::column_privilege::ColumnPrivilege;
+use crate::db::index::Index;
 use crate::db::routine::Routine;
 use crate::db::routine_privilege::RoutinePrivilege;
 use crate::db::table_privilege::TablePrivilege;
@@ -39,6 +41,10 @@ impl Database {
 
     pub async fn column_privileges(&mut self, schema_names: &[String]) -> Result<Vec<ColumnPrivilege>, Error> {
         column_privilege::column_privileges(&mut self.connection, schema_names).await
+    }
+
+    pub async fn indices(&mut self, schema_names: &[String]) -> Result<Vec<Index>, Error> {
+        index::indices(&mut self.connection, schema_names).await
     }
 
     pub async fn routines(&mut self, schema_names: &[String]) -> Result<Vec<Routine>, Error> {

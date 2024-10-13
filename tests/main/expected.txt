@@ -67,25 +67,23 @@ VALUES (a, b);
     Property 'table_type': changed from 'BASE TABLE' to 'VIEW'
     Property 'is_insertable_into': changed from 'YES' to 'NO'
     Column 'a':
-      Property 'is_nullable': changed from 'NO' to 'YES'
-      Property 'is_identity': changed from 'YES' to 'NO'
-      Property 'identity_generation': changed from 'ALWAYS' to '<none>'
-      Property 'identity_start': changed from '1' to '<none>'
-      Property 'identity_increment': changed from '1' to '<none>'
-      Property 'identity_maximum': changed from '2147483647' to '<none>'
-      Property 'identity_minimum': changed from '1' to '<none>'
       Property 'is_updatable': changed from 'YES' to 'NO'
     Column 'b':
       Property 'is_nullable': changed from 'NO' to 'YES'
       Property 'is_updatable': changed from 'YES' to 'NO'
-    Constraint 'table_changed_pkey': removed
   Table 'table_constraint_added':
     Constraint 'fk_table_constraint_added': added
   Table 'table_constraint_changed':
-    Constraint 'my_constraint':
-      Property 'constraint_type': changed from 'PRIMARY KEY' to 'FOREIGN KEY'
+    Constraint 'c_table_constraint_changed':
+      Property 'constraint_type': changed from 'FOREIGN KEY' to 'PRIMARY KEY'
+    Index 'c_table_constraint_changed': added
   Table 'table_constraint_removed':
     Constraint 'fk_table_constraint_removed': removed
+  Table 'table_indices':
+    Index 'table_index_changed':
+      Property 'definition': changed from 'CREATE INDEX table_index_changed ON test.table_indices USING btree (c1)' to 'CREATE INDEX table_index_changed ON test.table_indices USING btree (c2)'
+    Index 'table_index_removed': removed
+    Index 'table_index_added': added
   Table 'table_privilege_added':
     Column 'a':
       Privilege 'INSERT' (postgres->table_privilege_added_role): added

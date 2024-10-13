@@ -18,7 +18,7 @@ Items compared:
 
 - [X] Columns
 - [X] Column Privileges
-- [ ] Indices
+- [X] Indices
 - [X] Routines
 - [X] Routine Privileges
 - [X] Sequences

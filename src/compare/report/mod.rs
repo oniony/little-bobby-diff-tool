@@ -1,10 +1,11 @@
-pub mod schema;
+pub mod column;
+pub mod index;
 pub mod property;
 pub mod privilege;
 pub mod routine;
+pub mod schema;
 pub mod sequence;
 pub mod table;
-pub mod column;
 pub mod table_constraint;
 pub mod table_trigger;
 pub mod view;
