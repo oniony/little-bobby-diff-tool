@@ -31,6 +31,24 @@ CREATE TABLE column_removed (
 );
 
 --
+-- table indices
+--
+
+CREATE TABLE table_indices (
+	id integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	a integer NOT NULL,
+	r integer NOT NULL,
+	c1 integer NOT NULL,
+	c2 integer NOT NULL
+);
+
+CREATE INDEX table_index_added
+ON table_indices (a);
+
+CREATE INDEX table_index_changed
+ON table_indices (c2);
+
+--
 -- column privileges
 --
 
@@ -224,7 +242,7 @@ CREATE TABLE table_constraint_added (
 CREATE TABLE table_constraint_changed (
 	id integer GENERATED ALWAYS AS IDENTITY,
 	a integer NOT NULL,
-	CONSTRAINT my_constraint FOREIGN KEY (a) REFERENCES table_constraint(id)
+	CONSTRAINT c_table_constraint_changed PRIMARY KEY (id)
 );
 
 -- table constraint removed

@@ -174,7 +174,7 @@ NO CYCLE;
 -- table changed
 
 CREATE TABLE table_changed (
-	a integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	a integer,
 	b text NOT NULL
 );
 
@@ -205,7 +205,7 @@ CREATE TABLE table_constraint_added (
 CREATE TABLE table_constraint_changed (
 	id integer GENERATED ALWAYS AS IDENTITY,
 	a integer NOT NULL,
-	CONSTRAINT my_constraint PRIMARY KEY (id)
+	CONSTRAINT c_table_constraint_changed FOREIGN KEY (a) REFERENCES table_constraint(id)
 );
 
 -- table constraint removed
@@ -215,6 +215,24 @@ CREATE TABLE table_constraint_removed (
 	a integer NOT NULL,
 	CONSTRAINT fk_table_constraint_removed FOREIGN KEY (a) REFERENCES table_constraint(id)
 );
+
+--
+-- table indices
+--
+
+CREATE TABLE table_indices (
+	id integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+	a integer NOT NULL,
+	r integer NOT NULL,
+	c1 integer NOT NULL,
+	c2 integer NOT NULL
+);
+
+CREATE INDEX table_index_removed
+ON table_indices (r);
+
+CREATE INDEX table_index_changed
+ON table_indices (c1);
 
 --
 -- table privileges

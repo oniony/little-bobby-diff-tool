@@ -22,6 +22,8 @@ use crate::compare::report::table::TableComparison;
 use crate::compare::report::table::TableComparison::{TableAdded, TableMaintained, TableRemoved};
 use crate::compare::report::column::ColumnComparison;
 use crate::compare::report::column::ColumnComparison::{ColumnAdded, ColumnMaintained, ColumnRemoved};
+use crate::compare::report::index::IndexComparison;
+use crate::compare::report::index::IndexComparison::{IndexAdded, IndexMaintained, IndexRemoved};
 use crate::compare::report::table_constraint::TableConstraintComparison;
 use crate::compare::report::table_constraint::TableConstraintComparison::{ConstraintAdded, ConstraintMaintained, ConstraintRemoved};
 use crate::compare::report::table_trigger::TableTriggerComparison::{TriggerAdded, TriggerMaintained, TriggerRemoved};
@@ -250,7 +252,7 @@ impl CLI {
 
         for table in &report.entries {
             match table {
-                TableMaintained { table_name, properties, columns, privileges, constraints, triggers } => {
+                TableMaintained { table_name, columns, constraints, indices, privileges, properties, triggers } => {
                     let has_changes = table.has_changes();
                     
                     if has_changes {
@@ -266,6 +268,7 @@ impl CLI {
                         differences += self.render_privilege_report(&privileges, 2);
                         differences += self.render_table_constraint_report(&constraints);
                         differences += self.render_table_trigger_report(&triggers);
+                        differences += self.render_table_index_report(&indices);
                     }
                 },
                 TableAdded { table_name } => {
@@ -329,7 +332,7 @@ impl CLI {
 
         for constraint in &report.entries {
             match constraint {
-                ConstraintMaintained { constraint_name, properties  } => {
+                ConstraintMaintained { constraint_name, properties } => {
                     let has_changes = constraint.has_changes();
                     
                     if has_changes {
@@ -351,6 +354,43 @@ impl CLI {
                 }
                 ConstraintRemoved { constraint_name } => {
                     let message = format!("    Constraint '{}': removed", constraint_name);
+                    println!("{}", message.color(COLOUR_REMOVED));
+
+                    differences += 1;
+                }
+            }
+        }
+
+        differences
+    }
+
+    fn render_table_index_report(&self, report: &Report<IndexComparison>) -> i32 {
+        let mut differences = 0;
+
+        for index in &report.entries {
+            match index {
+                IndexMaintained { index_name, properties } => {
+                    let has_changes = index.has_changes();
+
+                    if has_changes {
+                        let message = format!("    Index '{}':", index_name);
+                        println!("{}", message.color(COLOUR_CHANGED));
+                    } else if self.args.verbose {
+                        println!("    Index '{}': unchanged", index_name);
+                    }
+
+                    if has_changes || self.args.verbose {
+                        differences += self.render_property_report(&properties, 3);
+                    }
+                },
+                IndexAdded { index_name } => {
+                    let message = format!("    Index '{}': added", index_name);
+                    println!("{}", message.color(COLOUR_ADDED));
+
+                    differences += 1;
+                }
+                IndexRemoved { index_name } => {
+                    let message = format!("    Index '{}': removed", index_name);
                     println!("{}", message.color(COLOUR_REMOVED));
 
                     differences += 1;

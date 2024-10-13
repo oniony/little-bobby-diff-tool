@@ -177,6 +177,10 @@ VALUES (name, role_id);
       Property 'initially_deferred': unchanged at 'NO'
       Property 'enforced': unchanged at 'YES'
       Property 'nulls_distinct': unchanged at '<none>'
+    Index 'department_name_key': unchanged
+      Property 'definition': unchanged at 'CREATE UNIQUE INDEX department_name_key ON test.department USING btree (name)'
+    Index 'department_pkey': unchanged
+      Property 'definition': unchanged at 'CREATE UNIQUE INDEX department_pkey ON test.department USING btree (id)'
   Table 'department_employee': unchanged
     Property 'table_catalog': unchanged at 'postgres'
     Property 'table_schema': unchanged at 'test'
@@ -469,6 +473,8 @@ VALUES (name, role_id);
       Property 'initially_deferred': unchanged at 'NO'
       Property 'enforced': unchanged at 'YES'
       Property 'nulls_distinct': unchanged at '<none>'
+    Index 'employee_pkey': unchanged
+      Property 'definition': unchanged at 'CREATE UNIQUE INDEX employee_pkey ON test.employee USING btree (id)'
   Table 'employee_role': unchanged
     Property 'table_catalog': unchanged at 'postgres'
     Property 'table_schema': unchanged at 'test'
@@ -597,6 +603,10 @@ VALUES (name, role_id);
       Property 'initially_deferred': unchanged at 'NO'
       Property 'enforced': unchanged at 'YES'
       Property 'nulls_distinct': unchanged at '<none>'
+    Index 'employee_role_name_key': unchanged
+      Property 'definition': unchanged at 'CREATE UNIQUE INDEX employee_role_name_key ON test.employee_role USING btree (name)'
+    Index 'employee_role_pkey': unchanged
+      Property 'definition': unchanged at 'CREATE UNIQUE INDEX employee_role_pkey ON test.employee_role USING btree (id)'
   Table 'leads': unchanged
     Property 'table_catalog': unchanged at 'postgres'
     Property 'table_schema': unchanged at 'test'

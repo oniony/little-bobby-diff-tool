@@ -3,6 +3,7 @@ use std::fmt::Display;
 use itertools::Itertools;
 use sqlx::Error;
 
+use crate::compare::report::index::IndexComparison;
 use crate::compare::report::privilege::PrivilegeComparison;
 use crate::compare::report::privilege::PrivilegeComparison::{PrivilegeAdded, PrivilegeMaintained, PrivilegeRemoved};
 use crate::compare::report::property::PropertyComparison;
@@ -16,6 +17,7 @@ use crate::compare::report::table::TableComparison;
 use crate::compare::report::table::TableComparison::{TableAdded, TableMaintained, TableRemoved};
 use crate::compare::report::column::ColumnComparison;
 use crate::compare::report::column::ColumnComparison::{ColumnAdded, ColumnMaintained, ColumnRemoved};
+use crate::compare::report::index::IndexComparison::{IndexAdded, IndexMaintained, IndexRemoved};
 use crate::compare::report::routine::RoutineComparison;
 use crate::compare::report::routine::RoutineComparison::{RoutineAdded, RoutineMaintained, RoutineRemoved};
 use crate::compare::report::table_constraint::TableConstraintComparison;
@@ -29,6 +31,7 @@ use crate::db::schema::Schema;
 use crate::db::table::Table;
 use crate::db::column::Column;
 use crate::db::column_privilege::ColumnPrivilege;
+use crate::db::index::Index;
 use crate::db::privilege::Privilege;
 use crate::db::routine::Routine;
 use crate::db::routine_privilege::RoutinePrivilege;
@@ -63,26 +66,28 @@ impl Comparer {
     pub async fn compare(&mut self, schemas: Vec<String>) -> Result<Report<SchemaComparison>, Error> {
         let mut entries = Vec::new();
 
-        let left_schemas = self.left_db.schemas(&schemas[..]).await?;
-        let right_schemas = self.right_db.schemas(&schemas[..]).await?;
+        let left_columns = self.left_db.columns(&schemas[..]).await?;
+        let right_columns = self.right_db.columns(&schemas[..]).await?;
+        let left_column_privileges = self.left_db.column_privileges(&schemas[..]).await?;
+        let right_column_privileges = self.right_db.column_privileges(&schemas[..]).await?;
         let left_routines = self.left_db.routines(&schemas[..]).await?;
         let right_routines = self.right_db.routines(&schemas[..]).await?;
         let left_routine_privileges = self.left_db.routine_privileges(&schemas[..]).await?;
         let right_routine_privileges = self.right_db.routine_privileges(&schemas[..]).await?;
+        let left_schemas = self.left_db.schemas(&schemas[..]).await?;
+        let right_schemas = self.right_db.schemas(&schemas[..]).await?;
         let left_sequences = self.left_db.sequences(&schemas[..]).await?;
         let right_sequences = self.right_db.sequences(&schemas[..]).await?;
         let left_tables = self.left_db.tables(&schemas[..]).await?;
         let right_tables = self.right_db.tables(&schemas[..]).await?;
-        let left_columns = self.left_db.columns(&schemas[..]).await?;
-        let right_columns = self.right_db.columns(&schemas[..]).await?;
         let left_table_constraints = self.left_db.table_constraints(&schemas[..]).await?;
         let right_table_constraints = self.right_db.table_constraints(&schemas[..]).await?;
+        let left_indices = self.left_db.indices(&schemas[..]).await?;
+        let right_indices = self.right_db.indices(&schemas[..]).await?;
         let left_table_privileges = self.left_db.table_privileges(&schemas[..]).await?;
         let right_table_privileges = self.right_db.table_privileges(&schemas[..]).await?;
         let left_table_triggers = self.left_db.table_triggers(&schemas[..]).await?;
         let right_table_triggers = self.right_db.table_triggers(&schemas[..]).await?;
-        let left_column_privileges = self.left_db.column_privileges(&schemas[..]).await?;
-        let right_column_privileges = self.right_db.column_privileges(&schemas[..]).await?;
         let left_views = self.left_db.views(&schemas[..]).await?;
         let right_views = self.right_db.views(&schemas[..]).await?;
         
@@ -114,6 +119,8 @@ impl Comparer {
                     let right_schema_tables = right_tables.iter().filter(|t| t.table_schema == schema).collect();
                     let left_schema_columns = left_columns.iter().filter(|c| c.table_schema == schema).collect();
                     let right_schema_columns = right_columns.iter().filter(|c| c.table_schema == schema).collect();
+                    let left_schema_indices = left_indices.iter().filter(|i| i.table_schema == schema).collect();
+                    let right_schema_indices = right_indices.iter().filter(|i| i.table_schema == schema).collect();
                     let left_schema_table_privileges = left_table_privileges.iter().filter(|p| p.table_schema == schema).collect();
                     let right_schema_table_privileges = right_table_privileges.iter().filter(|p| p.table_schema == schema).collect();
                     let left_schema_table_constraints = left_table_constraints.iter().filter(|c| c.table_schema == schema).collect();
@@ -129,6 +136,8 @@ impl Comparer {
                         right_schema_columns,
                         left_schema_column_privileges,
                         right_schema_column_privileges,
+                        left_schema_indices,
+                        right_schema_indices,
                         left_schema_table_privileges,
                         right_schema_table_privileges,
                         left_schema_table_constraints,
@@ -270,7 +279,7 @@ impl Comparer {
     
         for left_privilege in left_privileges {
             let key = &(left_privilege.privilege_type(), left_privilege.grantor(), left_privilege.grantee());
-            let right_privilege = right_privileges_map.get_mut(&key);
+            let right_privilege = right_privileges_map.get(&key);
     
             match right_privilege {
                 None => entries.push(PrivilegeRemoved { privilege_name: left_privilege.privilege_type().to_string(), grantor: left_privilege.grantor().to_string(), grantee: left_privilege.grantee().to_string() }),
@@ -299,7 +308,8 @@ impl Comparer {
         let mut entries = Vec::new();
     
         for left_sequence in left_sequences {
-            let right_sequence = right_sequences_map.get(&left_sequence.sequence_name);
+            let key = &left_sequence.sequence_name;
+            let right_sequence = right_sequences_map.get(key);
     
             match right_sequence {
                 None => {
@@ -310,7 +320,7 @@ impl Comparer {
     
                     entries.push(SequenceMaintained { sequence_name: left_sequence.sequence_name.clone(), properties });
     
-                    right_sequences_map.remove(&rs.sequence_name.clone());
+                    right_sequences_map.remove(key);
                 }
             }
         }
@@ -353,6 +363,8 @@ impl Comparer {
                       right_columns: Vec<&Column>,
                       left_column_privileges: Vec<&ColumnPrivilege>,
                       right_column_privileges: Vec<&ColumnPrivilege>,
+                      left_indices: Vec<&Index>,
+                      right_indices: Vec<&Index>,
                       left_table_privileges : Vec<&TablePrivilege>,
                       right_table_privileges : Vec<&TablePrivilege>,
                       left_table_constraints : Vec<&TableConstraint>,
@@ -364,7 +376,8 @@ impl Comparer {
         let mut right_tables_map: HashMap<String, &Table> = right_tables.into_iter().map(|t| (t.table_name.clone(), t)).collect();
 
         for left_table in left_tables {
-            let right_table = right_tables_map.get(&left_table.table_name);
+            let key = &left_table.table_name;
+            let right_table = right_tables_map.get(key);
     
             match right_table {
                 None => {
@@ -377,6 +390,8 @@ impl Comparer {
                     let right_table_columns : Vec<&Column> = right_columns.iter().filter(|t| t.table_name == rt.table_name).cloned().collect();
                     let left_table_column_privileges : Vec<&ColumnPrivilege> = left_column_privileges.iter().filter(|p| p.table_name == left_table.table_name).cloned().collect();
                     let right_table_column_privileges : Vec<&ColumnPrivilege> = right_column_privileges.iter().filter(|p| p.table_name == rt.table_name).cloned().collect();
+                    let left_table_indices: Vec<&Index> = left_indices.iter().filter(|i| i.table_name == left_table.table_name).cloned().collect();
+                    let right_table_indices: Vec<&Index> = right_indices.iter().filter(|i| i.table_name == rt.table_name).cloned().collect();
                     let left_table_table_privileges: Vec<&TablePrivilege> = left_table_privileges.iter().filter(|p| p.table_name == left_table.table_name).cloned().collect();
                     let right_table_table_privileges: Vec<&TablePrivilege> = right_table_privileges.iter().filter(|p| p.table_name == left_table.table_name).cloned().collect();
                     let left_table_table_constraints: Vec<&TableConstraint> = left_table_constraints.iter().filter(|c| c.table_name == left_table.table_name).cloned().collect();
@@ -385,13 +400,14 @@ impl Comparer {
                     let right_table_table_triggers : Vec<&TableTrigger> = right_table_triggers.iter().filter(|t| t.event_object_table == rt.table_name).cloned().collect();
                     
                     let columns = self.compare_table_columns(left_table_columns, right_table_columns, left_table_column_privileges, right_table_column_privileges)?;
+                    let indices = self.compare_table_indices(left_table_indices, right_table_indices)?;
                     let privileges = self.compare_table_privileges(left_table_table_privileges, right_table_table_privileges)?;
                     let constraints = self.compare_table_constraints(left_table_table_constraints, right_table_table_constraints)?;
                     let triggers = self.compare_table_triggers(left_table_table_triggers, right_table_table_triggers)?;
     
-                    entries.push(TableMaintained { table_name: left_table.table_name.clone(), properties, columns, privileges, constraints, triggers });
+                    entries.push(TableMaintained { table_name: left_table.table_name.clone(), columns, constraints, indices, privileges, properties, triggers });
     
-                    right_tables_map.remove(&rt.table_name.clone());
+                    right_tables_map.remove(key);
                 },
             }
         }
@@ -445,8 +461,8 @@ impl Comparer {
         let mut right_columns_map : HashMap<String, &Column> = right_columns.into_iter().map(|c| (c.column_name.clone(), c)).collect();
     
         for left_column in left_columns {
-            let key = left_column.column_name.clone();
-            let right_column = right_columns_map.get_mut(&key);
+            let key = &left_column.column_name;
+            let right_column = right_columns_map.get_mut(key);
     
             match right_column {
                 None => {
@@ -461,7 +477,7 @@ impl Comparer {
     
                     entries.push(ColumnMaintained { column_name: rc.column_name.clone(), properties, privileges });
     
-                    right_columns_map.remove(&key);
+                    right_columns_map.remove(key);
                 },
             }
         }
@@ -541,8 +557,8 @@ impl Comparer {
         let mut entries = Vec::new();
     
         for left_table_constraint in left_table_constraints {
-            let key = left_table_constraint.constraint_name.clone();
-            let right_table_constraint = right_table_constraints_map.get(&key);
+            let key = &left_table_constraint.constraint_name;
+            let right_table_constraint = right_table_constraints_map.get(key);
     
             match right_table_constraint {
                 None => {
@@ -553,7 +569,7 @@ impl Comparer {
     
                     entries.push(ConstraintMaintained { constraint_name: rtc.constraint_name.clone(), properties });
     
-                    right_table_constraints_map.remove(&key);
+                    right_table_constraints_map.remove(key);
                 },
             }
         }
@@ -585,12 +601,57 @@ impl Comparer {
         }
     }
 
+    fn compare_table_indices(&mut self,
+                             left_indices: Vec<&Index>,
+                             right_indices: Vec<&Index>,
+    ) -> Result<Report<IndexComparison>, Error> {
+        let mut entries = Vec::new();
+        let mut right_indices_map : HashMap<String, &Index> = right_indices.into_iter().map(|c| (c.index_name.clone(), c)).collect();
+
+        for left_index in left_indices {
+            let key = &left_index.index_name;
+            let right_index = right_indices_map.get_mut(key);
+
+            match right_index {
+                None => {
+                    entries.push(IndexRemoved { index_name: left_index.index_name.clone() });
+                },
+                Some(ri) => {
+                    let properties = self.compare_table_index_properties(&left_index, ri);
+
+                    entries.push(IndexMaintained { index_name: ri.index_name.clone(), properties });
+
+                    right_indices_map.remove(key);
+                },
+            }
+        }
+
+        if right_indices_map.len() > 0 {
+            let mut added_indices: Vec<&&Index> = right_indices_map.values().collect();
+            added_indices.sort_unstable_by_key(|i| &i.index_name);
+
+            for right_index in added_indices {
+                entries.push(IndexAdded { index_name: right_index.index_name.clone() });
+            }
+        }
+
+        Ok(Report { entries })
+    }
+    
+    fn compare_table_index_properties(&mut self, left: &Index, right: &Index) -> Report<PropertyComparison> {
+        Report {
+            entries: vec![
+                self.compare_property("definition", left, right, |i| &i.definition),
+            ]
+        }
+    }
+
     fn compare_table_triggers(&mut self, left_table_triggers: Vec<&TableTrigger>, right_table_triggers: Vec<&TableTrigger>) -> Result<Report<TableTriggerComparison>, Error> {
         let mut right_triggers_map : HashMap<(String, String), &TableTrigger> = right_table_triggers.into_iter().map(|t| ((t.trigger_name.clone(), t.event_manipulation.clone()), t)).collect();
         let mut entries = Vec::new();
     
         for left_table_trigger in left_table_triggers {
-            let key = &(left_table_trigger.trigger_name.clone(), left_table_trigger.event_manipulation.clone());
+            let key = (left_table_trigger.trigger_name.clone(), left_table_trigger.event_manipulation.clone());
             let right_table_trigger = right_triggers_map.get(&key);
     
             match right_table_trigger {
@@ -602,7 +663,7 @@ impl Comparer {
     
                     entries.push(TriggerMaintained { trigger_name: rt.trigger_name.clone(), event_manipulation: rt.event_manipulation.clone(), properties });
     
-                    right_triggers_map.remove(key);
+                    right_triggers_map.remove(&key);
                 },
             }
         }
