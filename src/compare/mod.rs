@@ -34,6 +34,7 @@ use crate::db::column_privilege::ColumnPrivilege;
 use crate::db::index::Index;
 use crate::db::privilege::Privilege;
 use crate::db::routine::Routine;
+use crate::db::routine_parameters::RoutineParameter;
 use crate::db::routine_privilege::RoutinePrivilege;
 use crate::db::table_constraint::TableConstraint;
 use crate::db::table_privilege::TablePrivilege;
@@ -72,6 +73,8 @@ impl Comparer {
         let right_column_privileges = self.right_db.column_privileges(&schemas[..]).await?;
         let left_routines = self.left_db.routines(&schemas[..]).await?;
         let right_routines = self.right_db.routines(&schemas[..]).await?;
+        let left_routine_parameters = self.left_db.routine_parameters(&schemas[..]).await?;
+        let right_routine_parameters = self.right_db.routine_parameters(&schemas[..]).await?;
         let left_routine_privileges = self.left_db.routine_privileges(&schemas[..]).await?;
         let right_routine_privileges = self.right_db.routine_privileges(&schemas[..]).await?;
         let left_schemas = self.left_db.schemas(&schemas[..]).await?;
@@ -107,9 +110,17 @@ impl Comparer {
 
                     let left_schema_routines = left_routines.iter().filter(|r| r.routine_schema == schema).collect();
                     let right_schema_routines = right_routines.iter().filter(|r| r.routine_schema == schema).collect();
+                    let left_schema_routine_parameters = left_routine_parameters.iter().filter(|p| p.specific_schema == schema).collect();
+                    let right_schema_routine_parameters = right_routine_parameters.iter().filter(|p| p.specific_schema == schema).collect();
                     let left_schema_routine_privileges = left_routine_privileges.iter().filter(|p| p.routine_schema == schema).collect();
                     let right_schema_routine_privileges = right_routine_privileges.iter().filter(|p| p.routine_schema == schema).collect();
-                    let routines = self.compare_routines(left_schema_routines, right_schema_routines, left_schema_routine_privileges, right_schema_routine_privileges)?;
+                    let routines = self.compare_routines(
+                        left_schema_routines,
+                        right_schema_routines,
+                        left_schema_routine_parameters,
+                        right_schema_routine_parameters,
+                        left_schema_routine_privileges,
+                        right_schema_routine_privileges)?;
 
                     let left_schema_sequences = left_sequences.iter().filter(|s| s.sequence_schema == schema).collect();
                     let right_schema_sequences = right_sequences.iter().filter(|s| s.sequence_schema == schema).collect();
@@ -172,39 +183,42 @@ impl Comparer {
     fn compare_routines(&mut self,
                         left_routines: Vec<&Routine>,
                         right_routines: Vec<&Routine>,
+                        left_routine_parameters: Vec<&RoutineParameter>,
+                        right_routine_parameters: Vec<&RoutineParameter>,
                         left_routine_privileges: Vec<&RoutinePrivilege>,
                         right_routine_privileges: Vec<&RoutinePrivilege>,
     ) -> Result<Report<RoutineComparison>, Error> {
-        let mut right_routines_map: HashMap<String, &Routine> = right_routines.into_iter().map(|t| (t.signature.clone(), t)).collect();
+        let mut right_routines_map: HashMap<String, &Routine> = right_routines.into_iter().map(|r| (routine_signature(r, &right_routine_parameters), r)).collect();
         let mut entries = Vec::new();
     
         for left_routine in left_routines {
-            let right_routine = right_routines_map.get(&left_routine.signature);
+            let signature = routine_signature(left_routine, &left_routine_parameters);
+            let right_routine = right_routines_map.get(&signature);
     
             match right_routine {
                 None => {
-                    entries.push(RoutineRemoved { routine_signature: left_routine.signature.clone() });
+                    entries.push(RoutineRemoved { routine_signature: signature.clone() });
                 },
                 Some(rr) => {
                     let properties = self.compare_routine_properties(&left_routine, rr);
-                    
-                    let left_routine_routine_privileges: Vec<&RoutinePrivilege> = left_routine_privileges.iter().filter(|p| p.signature == left_routine.signature).cloned().collect();
-                    let right_routine_routine_privileges: Vec<&RoutinePrivilege> = right_routine_privileges.iter().filter(|p| p.signature == rr.signature).cloned().collect();
+
+                    let left_routine_routine_privileges: Vec<&RoutinePrivilege> = left_routine_privileges.iter().filter(|p| p.specific_catalog == left_routine.specific_catalog && p.specific_schema == left_routine.specific_schema && p.specific_name == left_routine.specific_name).cloned().collect();
+                    let right_routine_routine_privileges: Vec<&RoutinePrivilege> = right_routine_privileges.iter().filter(|p| p.specific_catalog == rr.specific_catalog && p.specific_schema == rr.specific_schema && p.specific_name == rr.specific_name).cloned().collect();
                     let privileges = self.compare_routine_privileges(left_routine_routine_privileges, right_routine_routine_privileges)?;
     
-                    entries.push(RoutineMaintained { routine_signature: left_routine.signature.clone(), properties, privileges });
+                    entries.push(RoutineMaintained { routine_signature: signature.clone(), properties, privileges });
     
-                    right_routines_map.remove(&rr.signature.clone());
+                    right_routines_map.remove(&signature);
                 }
             }
         }
     
         if right_routines_map.len() > 0 {
-            let mut added_routines: Vec<&&Routine> = right_routines_map.values().collect();
-            added_routines.sort_unstable_by_key(|r| &r.signature);
+            let mut added_signatures : Vec<&String> = right_routines_map.keys().collect();
+            added_signatures.sort_unstable();
     
-            for right_routine in added_routines {
-                entries.push(RoutineAdded { routine_signature: right_routine.signature.clone() });
+            for added_signature in added_signatures {
+                entries.push(RoutineAdded { routine_signature: added_signature.clone() });
             }
         }
     
@@ -786,4 +800,37 @@ impl Comparer {
             PropertyChanged { property_name: String::from(property_name), left_value: left.to_string(), right_value: right.to_string() }
         }
     }
+    
+}
+
+fn routine_signature(routine: &Routine, all_parameters: &Vec<&RoutineParameter>) -> String {
+    let parameters : Vec<&RoutineParameter> = all_parameters.iter().filter(|p| p.specific_catalog == routine.specific_catalog && p.specific_schema == routine.specific_schema && p.specific_name == routine.specific_name).cloned().collect();
+    
+    let mut signature = routine.routine_name.clone();
+    signature.push('(');
+    
+    for (index, parameter) in parameters.iter().enumerate() {
+        if index > 0 {
+            signature.push_str(", ")
+        }
+
+        let parameter_name = match &parameter.parameter_name {
+            Some(parameter_name) => parameter_name,
+            None => &format!("${}", parameter.ordinal_position),
+        };
+
+        signature.push_str(parameter_name);
+        signature.push(' ');
+        signature.push_str(&parameter.parameter_mode);
+        signature.push(' ');
+        signature.push_str(&parameter.udt_catalog);
+        signature.push('.');
+        signature.push_str(&parameter.udt_schema);
+        signature.push('.');
+        signature.push_str(&parameter.udt_name);
+    }
+    
+    signature.push(')');
+    
+    signature
 }
