@@ -5,14 +5,12 @@ const QUERY: &str = r#"
 SELECT
     rp.grantor,
     rp.grantee,
+    rp.specific_catalog,
+    rp.specific_schema,
+    rp.specific_name,
     rp.routine_catalog,
     rp.routine_schema,
-    rp.routine_name || '(' || COALESCE((
-        SELECT string_agg(COALESCE(p.parameter_name, '$' || p.ordinal_position) || ' ' || p.parameter_mode || ' ' || p.udt_schema || '.' || p.udt_name, ', ' order by p.ordinal_position)
-        FROM information_schema.parameters p
-        WHERE p.specific_name = rp.specific_name
-        GROUP BY p.specific_name
-    ), '') || ')' signature,
+    rp.routine_name,
     rp.privilege_type,
     rp.is_grantable
 FROM
@@ -21,7 +19,6 @@ WHERE
     rp.routine_schema = ANY($1) AND
     rp.grantor != rp.grantee
 ORDER BY
-    signature,
     privilege_type;"#;
 
 pub async fn routine_privileges(connection: &mut PgConnection, schema_names: &[String]) -> Result<Vec<RoutinePrivilege>, Error> {
@@ -34,9 +31,12 @@ pub async fn routine_privileges(connection: &mut PgConnection, schema_names: &[S
 pub struct RoutinePrivilege {
     pub grantor: String,
     pub grantee: String,
+    pub specific_catalog: String,
+    pub specific_schema: String,
+    pub specific_name: String,
     pub routine_catalog: String,
     pub routine_schema: String,
-    pub signature: String,
+    pub routine_name: String,
     pub privilege_type: String,
     pub is_grantable: String,
 }

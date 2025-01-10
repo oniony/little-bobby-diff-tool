@@ -3,7 +3,7 @@ Schema 'test': unchanged
   Property 'default_character_set_catalog': unchanged at '<none>'
   Property 'default_character_set_schema': unchanged at '<none>'
   Property 'default_character_set_name': unchanged at '<none>'
-  Routine 'new_employee(name IN pg_catalog.text, role_id IN pg_catalog.int4)': unchanged
+  Routine 'new_employee(name IN postgres.pg_catalog.text, role_id IN postgres.pg_catalog.int4)': unchanged
     Property 'routine_type': unchanged at 'PROCEDURE'
     Property 'module_catalog': unchanged at '<none>'
     Property 'module_schema': unchanged at '<none>'

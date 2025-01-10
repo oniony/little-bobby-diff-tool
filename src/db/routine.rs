@@ -2,14 +2,12 @@ use sqlx::{Error, FromRow, PgConnection};
 
 pub const QUERY: &str = r#"
 SELECT
+    r.specific_catalog,
+    r.specific_schema,
+    r.specific_name,
     r.routine_catalog,
     r.routine_schema,
-    r.routine_name || '(' || COALESCE((
-	    SELECT string_agg(COALESCE(p.parameter_name, '$' || p.ordinal_position) || ' ' || p.parameter_mode || ' ' || p.udt_schema || '.' || p.udt_name, ', ' order by p.ordinal_position)
-        FROM information_schema.parameters p
-        WHERE p.specific_name = r.specific_name
-        GROUP BY p.specific_name
-    ), '') || ')' signature,
+    r.routine_name,
     r.routine_type,
     r.module_catalog,
     r.module_schema,
@@ -57,7 +55,7 @@ FROM
 WHERE
     r.routine_schema = ANY($1)
 ORDER BY
-    signature;"#;
+    r.routine_name;"#;
 
 pub async fn routines(connection: &mut PgConnection, schema_names: &[String]) -> Result<Vec<Routine>, Error> {
     sqlx::query_as(QUERY)
@@ -67,9 +65,12 @@ pub async fn routines(connection: &mut PgConnection, schema_names: &[String]) ->
 
 #[derive(Debug, Clone, PartialEq, FromRow)]
 pub struct Routine {
+    pub specific_catalog: String,
+    pub specific_schema: String,
+    pub specific_name: String,
     pub routine_catalog: String,
     pub routine_schema: String,
-    pub signature: String,
+    pub routine_name: String,
     pub routine_type: Option<String>,
     pub module_catalog: Option<String>,
     pub module_schema: Option<String>,

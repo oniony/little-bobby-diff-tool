@@ -1,5 +1,5 @@
 Schema 'test':
-  Routine 'routine_changed(a IN pg_catalog.int4, b IN pg_catalog.text)':
+  Routine 'routine_changed(a IN postgres.pg_catalog.int4, b IN postgres.pg_catalog.text)':
     Property 'routine_definition': changed from '
 INSERT INTO routine (a, b)
 VALUES (a, b);
@@ -7,12 +7,12 @@ VALUES (a, b);
 INSERT INTO routine (a, b)
 VALUES (a + 100, b);
 '
-  Routine 'routine_privilege_added(a IN pg_catalog.int4, b IN pg_catalog.text)':
+  Routine 'routine_privilege_added(a IN postgres.pg_catalog.int4, b IN postgres.pg_catalog.text)':
     Privilege 'EXECUTE' (postgres->routine_privilege_added_role): added
-  Routine 'routine_privilege_removed(a IN pg_catalog.int4, b IN pg_catalog.text)':
+  Routine 'routine_privilege_removed(a IN postgres.pg_catalog.int4, b IN postgres.pg_catalog.text)':
     Privilege 'EXECUTE' (postgres->routine_privilege_removed_role): removed
-  Routine 'routine_removed(a IN pg_catalog.int4, b IN pg_catalog.text)': removed
-  Routine 'routine_whitespace_changed(a IN pg_catalog.int4, b IN pg_catalog.text)':
+  Routine 'routine_removed(a IN postgres.pg_catalog.int4, b IN postgres.pg_catalog.text)': removed
+  Routine 'routine_whitespace_changed(a IN postgres.pg_catalog.int4, b IN postgres.pg_catalog.text)':
     Property 'routine_definition': changed from '
 INSERT INTO routine (a, b)
 VALUES (a, b);
@@ -22,8 +22,8 @@ VALUES (a, b);
 	VALUES
 		(a, b);
 '
-  Routine 'routine_added(a IN pg_catalog.int4, b IN pg_catalog.text)': added
-  Routine 'routine_added_with_unnamed_parameters($1 IN pg_catalog.int4, $2 IN pg_catalog.text)': added
+  Routine 'routine_added(a IN postgres.pg_catalog.int4, b IN postgres.pg_catalog.text)': added
+  Routine 'routine_added_with_unnamed_parameters($1 IN postgres.pg_catalog.int4, $2 IN postgres.pg_catalog.text)': added
   Routine 'trigger_exception()': added
   Sequence 'sequence_changed':
     Property 'data_type': changed from 'integer' to 'bigint'

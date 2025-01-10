@@ -3,6 +3,7 @@ pub mod column_privilege;
 pub mod index;
 pub mod privilege;
 pub mod routine;
+pub mod routine_parameters;
 pub mod routine_privilege;
 pub mod schema;
 pub mod sequence;
@@ -17,6 +18,7 @@ use crate::db::column::Column;
 use crate::db::column_privilege::ColumnPrivilege;
 use crate::db::index::Index;
 use crate::db::routine::Routine;
+use crate::db::routine_parameters::RoutineParameter;
 use crate::db::routine_privilege::RoutinePrivilege;
 use crate::db::table_privilege::TablePrivilege;
 use crate::db::table_trigger::TableTrigger;
@@ -49,6 +51,10 @@ impl Database {
 
     pub async fn routines(&mut self, schema_names: &[String]) -> Result<Vec<Routine>, Error> {
         routine::routines(&mut self.connection, schema_names).await
+    }
+    
+    pub async fn routine_parameters(&mut self, schema_names: &[String]) -> Result<Vec<RoutineParameter>, Error> {
+        routine_parameters::routine_parameters(&mut self.connection, schema_names).await
     }
     
     pub async fn routine_privileges(&mut self, schema_names: &[String]) -> Result<Vec<RoutinePrivilege>, Error> {
